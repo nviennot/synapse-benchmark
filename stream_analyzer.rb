@@ -48,7 +48,6 @@ class DepGraph
 
     self.deps.each do |d, versions_op|
       ops = versions_op.sort_by { |v, _| v }.map { |v, op| op }
-      #binding.pry if d == 925475
 
       (ops.size - 1).times do |i|
         read_children = ops[i][:read_children].to_a
@@ -76,13 +75,14 @@ class DepGraph
 end
 
 class Operation
-  attr_accessor :klass, :id, :operation, :dependencies
+  attr_accessor :klass, :id, :operation, :dependencies, :user
 
   def initialize(payload)
     self.klass        = payload[:type]
     self.id           = payload[:id]
     self.operation    = payload[:operation]
     self.dependencies = payload[:dependencies]
+    self.user         = payload[:current_user_id]
   end
 
   def to_s
