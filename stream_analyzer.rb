@@ -66,16 +66,61 @@ class DepGraph
     dag
   end
 
+  def write_dag(dag)
+    params = {}
+    params['name'] ||= dag.class.name.gsub(/:/, '_')
+    fontsize       = 8
+    graph          = RGL::DOT::Digraph.new(params)
+    edge_class     = RGL::DOT::DirectedEdge
+
+    colors = {}
+
+    dag.each_vertex do |v|
+      name = v.to_s
+
+      node_options =  {
+        'name'     => name,
+        'fontsize' => fontsize,
+        'label'    => name
+      }
+
+      if v.is_a?(Operation)
+        #key = v.context.to_s
+        key = v.user.to_s
+        unless key.empty?
+          colors[key] ||= "#%06x" % (rand * 0xffffff)
+
+          node_options['color'] = colors[key]
+          node_options['style'] = 'filled'
+        end
+      end
+
+      graph << RGL::DOT::Node.new(node_options)
+    end
+
+    dag.each_edge do |u, v|
+      graph << edge_class.new(
+        'from'     => u.to_s,
+        'to'       => v.to_s,
+        'fontsize' => fontsize
+      )
+    end
+
+    File.open("graph.dot", 'w') do |f|
+      f << graph.to_s << "\n"
+    end
+  end
+
   def show
-    dag = self.compile
-    dag.write_to_graphic_file('png')
+    write_dag(self.compile)
+    system("dot -Tpng graph.dot -o graph.png -v")
     system("chromium graph.png")
     #system("kgraphviewer graph.dot")
   end
 end
 
 class Operation
-  attr_accessor :klass, :id, :operation, :dependencies, :user
+  attr_accessor :klass, :id, :operation, :dependencies, :user, :context
 
   def initialize(payload)
     self.klass        = payload[:type]
@@ -83,10 +128,11 @@ class Operation
     self.operation    = payload[:operation]
     self.dependencies = payload[:dependencies]
     self.user         = payload[:current_user_id]
+    self.context      = payload[:context]
   end
 
   def to_s
-    "#{self.operation[0]} #{self.klass} #{self.dependencies[:write].join(",")}"
+    "#{self.operation}\\n#{self.klass} #{self.dependencies[:write].join(",")}"
   end
 end
 
