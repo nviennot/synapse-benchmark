@@ -15,10 +15,22 @@ class DepGraph
   end
 
   def <<(op)
-    op.dependencies[:write].each do |dep|
-      d, v = dep.split(':').each(&:to_i)
+    op.dependencies[:write].to_a.each do |dep|
+      d, v = dep.split(':').map(&:to_i)
       self.deps[d] ||= {}
-      self.deps[d][v] = op
+      self.deps[d][v] ||= {}
+
+      return if self.deps[d][v][:op]
+
+      self.deps[d][v][:op] = op
+    end
+
+    op.dependencies[:read].to_a.each do |dep|
+      d, v = dep.split(':').map(&:to_i)
+      self.deps[d] ||= {}
+      self.deps[d][v] ||= {}
+      self.deps[d][v][:read_children] ||= []
+      self.deps[d][v][:read_children] << op
     end
 
     self.ops << op
@@ -27,26 +39,27 @@ class DepGraph
   def compile
     dag = RGL::DirectedAdjacencyGraph.new
 
-    # Adding all the read dependencies
-    self.ops.each do |op|
-      op.dependencies[:read].to_a.each do |dep|
-        d, v = dep.split(':').each(&:to_i)
-        parent = (self.deps[d] || {})[v]
-
-        if parent.nil?
-          STDERR.puts "WARNING: cannot find dependency #{dep}"
-          parent = dep
-        end
-
-        dag.add_edge(parent, op)
+    self.deps.each do |d,all_versions|
+      all_versions.each do |k,v|
+        # Fill in empty operations
+        v[:op] ||= "#{d}:#{k}"
       end
     end
 
-    # Each write dependencies is serialized
-    self.deps.values.each do |versions_op|
-      ops = versions_op.sort_by { |v,op| v }.map { |v,op| op }
+    self.deps.each do |d, versions_op|
+      ops = versions_op.sort_by { |v, _| v }.map { |v, op| op }
+      #binding.pry if d == 925475
+
       (ops.size - 1).times do |i|
-        dag.add_edge(ops[i], ops[i+1])
+        read_children = ops[i][:read_children].to_a
+        if read_children.empty?
+          dag.add_edge(ops[i][:op], ops[i+1][:op])
+        else
+          read_children.each do |read_child|
+            dag.add_edge(ops[i][:op], read_child)
+            dag.add_edge(read_child, ops[i+1][:op])
+          end
+        end
       end
     end
 
@@ -57,8 +70,8 @@ class DepGraph
   def show
     dag = self.compile
     dag.write_to_graphic_file('png')
-    # system("gwenview graph.png")
-    system("kgraphviewer graph.dot")
+    system("chromium graph.png")
+    #system("kgraphviewer graph.dot")
   end
 end
 
@@ -73,7 +86,7 @@ class Operation
   end
 
   def to_s
-    "#{self.operation[0]} #{self.klass} #{self.dependencies[:write].first}"
+    "#{self.operation[0]} #{self.klass} #{self.dependencies[:write].join(",")}"
   end
 end
 
