@@ -5,3 +5,5 @@ gem 'oj'
 gem 'thor'
 gem 'multi_json'
 gem 'pry'
+
+gem 'zipfian'

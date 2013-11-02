@@ -112,10 +112,38 @@ class DepGraph
   end
 
   def show
-    write_dag(self.compile)
+    dag = self.compile
+    write_dag(dag)
     system("dot -Tpng graph.dot -o graph.png -v")
     system("chromium graph.png")
     #system("kgraphviewer graph.dot")
+  end
+
+  def get_inverted_graph(dag)
+    RGL::DirectedAdjacencyGraph.new.tap do |inverted_dag|
+      dag.each_vertex do |u|
+        dag.each_adjacent(u) do |v|
+          inverted_dag.add_edge(v,u)
+        end
+      end
+    end
+  end
+
+  def simulate
+    dag = self.compile
+    inverted_dag = get_inverted_graph(dag)
+
+    num_steps = 0
+    candidates = dag.each_vertex
+    loop do
+      num_steps += 1
+      parents = candidates.reject { |v| inverted_dag.each_adjacent(v).any? }
+      candidates = parents.map { |v| dag.each_adjacent(v).to_a }.flatten.uniq
+      break if parents.size.zero?
+      puts parents.select { |o| o.is_a?(Operation) }.size
+      inverted_dag.remove_vertices(*parents)
+    end
+    puts "completed in #{num_steps} steps"
   end
 end
 
@@ -137,23 +165,34 @@ class Operation
 end
 
 class StreamAnalyzer < Thor
+  no_commands do
+    def parse_graph(input_file)
+      skip = options[:skip]
+      count = options[:count]
+
+      DepGraph.new.tap do |graph|
+        File.open(input_file).each do |line|
+          (skip -= 1; next) if skip > 0
+          (break if count == 0); count -= 1
+
+          graph << Operation.new(MultiJson.load(line, :symbolize_keys => true))
+        end
+      end
+    end
+  end
+
   desc "show input.json", "show the corresponding graph of the input file"
   option :skip,  :aliases => "-s", :type => :numeric, :default => 0,  :desc => "skip N lines from the input"
   option :count, :aliases => "-c", :type => :numeric, :default => -1, :desc => "only read N lines from the input"
   def show(input_file)
-    skip = options[:skip]
-    count = options[:count]
+    parse_graph(input_file).show
+  end
 
-    graph = DepGraph.new
-
-    File.open(input_file).each do |line|
-      (skip -= 1; next) if skip > 0
-      (break if count == 0); count -= 1
-
-      graph << Operation.new(MultiJson.load(line, :symbolize_keys => true))
-    end
-
-    graph.show
+  desc "simulate input.json", "simulate an optimal scheduling"
+  option :skip,  :aliases => "-s", :type => :numeric, :default => 0,  :desc => "skip N lines from the input"
+  option :count, :aliases => "-c", :type => :numeric, :default => -1, :desc => "only read N lines from the input"
+  def simulate(input_file)
+    parse_graph(input_file).simulate
   end
 
   start(ARGV)

@@ -21,6 +21,7 @@ GEM
     slop (3.4.6)
     stream (0.5)
     thor (0.18.1)
+    zipfian (0.0.3)
 
 PLATFORMS
   ruby
@@ -31,3 +32,4 @@ DEPENDENCIES
   pry
   rgl!
   thor
+  zipfian
