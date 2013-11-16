@@ -14,9 +14,15 @@ class DepGraph
     self.ops = []
   end
 
+  def parse_dep(dep)
+    match = dep.match(/^(.+):([0-9]+)$/)
+    raise "Can't parse #{dep}" unless match
+    return match[1], match[2]
+  end
+
   def <<(op)
     op.dependencies[:write].to_a.each do |dep|
-      d, v = dep.split(':').map(&:to_i)
+      d, v = parse_dep(dep)
       self.deps[d] ||= {}
       self.deps[d][v] ||= {}
 
@@ -26,7 +32,7 @@ class DepGraph
     end
 
     op.dependencies[:read].to_a.each do |dep|
-      d, v = dep.split(':').map(&:to_i)
+      d, v = parse_dep(dep)
       self.deps[d] ||= {}
       self.deps[d][v] ||= {}
       self.deps[d][v][:read_children] ||= []
@@ -49,14 +55,14 @@ class DepGraph
     self.deps.each do |d, versions_op|
       ops = versions_op.sort_by { |v, _| v }.map { |v, op| op }
 
-      (ops.size - 1).times do |i|
+      ops.size.times do |i|
         read_children = ops[i][:read_children].to_a
         if read_children.empty?
-          dag.add_edge(ops[i][:op], ops[i+1][:op])
+          dag.add_edge(ops[i][:op], ops[i+1][:op]) if i+1 < ops.size
         else
           read_children.each do |read_child|
             dag.add_edge(ops[i][:op], read_child)
-            dag.add_edge(read_child, ops[i+1][:op])
+            dag.add_edge(read_child, ops[i+1][:op]) if i+1 < ops.size
           end
         end
       end
@@ -151,9 +157,9 @@ class Operation
   attr_accessor :klass, :id, :operation, :dependencies, :user, :context
 
   def initialize(payload)
-    self.klass        = payload[:type]
+    self.klass        = payload[:type] || payload[:types].last
     self.id           = payload[:id]
-    self.operation    = payload[:operation]
+    self.operation    = payload[:operation] || payload[:operations].first[:operation]
     self.dependencies = payload[:dependencies]
     self.user         = payload[:current_user_id]
     self.context      = payload[:context]
