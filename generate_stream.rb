@@ -54,8 +54,7 @@ class Operation
 
   def payload(rev_dag)
     payload = {}
-    payload[:types] = ["Post"]
-    payload[:operations] = [{:operation => :create}]
+    payload[:operations] = [{:types => ["Post"], :operation => :create}]
     payload[:app] ='test'
     payload[:current_user_id] = self.user_id
     payload[:dependencies] = { :write => [] }
@@ -103,8 +102,7 @@ class Generator
     @friend_distribution = Zipfian.new(options[:max_num_friends], options[:coeff_num_friends])
     @num_ops_per_users = options[:total] / @num_users
 
-    @op_interaction_distribution = Zipfian.new((@num_ops_per_users * options[:num_interactions_ratio]).to_i + 1,
-                                               options[:coeff_interactions_ratio])
+    @op_interaction_distribution = Zipfian.new(@num_ops_per_users, options[:coeff_interactions_ratio])
 
     @coeff_friend_activity = options[:coeff_friend_activity]
   end
@@ -153,11 +151,10 @@ class Generator
   # end
 
   def write_file(output_file)
-    File.open(output_file, "w") do |f|
-      @num_ops_per_users.times do |op_index|
-        @users.each do |user|
-          f.puts MultiJson.dump(user.ops[op_index].payload(@rev_dag))
-        end
+    file = File.open(output_file, "w")
+    @num_ops_per_users.times do |op_index|
+      @users.shuffle.each do |user|
+        file.puts MultiJson.dump(user.ops[op_index].payload(@rev_dag))
       end
     end
   end
@@ -172,12 +169,10 @@ class GenerateStream < Thor
   option :max_num_friends,   :aliases => "-f", :type => :numeric, :default => 100,   :desc => "Max friends"
   option :coeff_num_friends, :aliases => "-g", :type => :numeric, :default => 1.5,   :desc => "Zipfian coeff friends"
 
-  option :num_interactions_ratio,   :aliases => "-i", :type => :numeric, :default => 0.3,   :desc => "Ratio of number of interactions"
-  option :coeff_interactions_ratio, :aliases => "-k", :type => :numeric, :default => 1.5,   :desc => "Zipfian coeff interactions"
+  option :coeff_interactions_ratio, :aliases => "-i", :type => :numeric, :default => 0.8,   :desc => "Zipfian coeff interactions"
+  option :coeff_friend_activity,    :aliases => "-a", :type => :numeric, :default => 1.5,   :desc => "Zipfian coeff friend activity"
 
-  option :coeff_friend_activity, :aliases => "-a", :type => :numeric, :default => 1.0,   :desc => "Zipfian coeff friend activity"
-
-  option :hash_size, :aliases => "-h", :type => :numeric, :default => 2*30, :desc => "Hash size, 0 to disable"
+  option :hash_size,   :aliases => "-h", :type => :numeric, :default => 2*30, :desc => "Hash size, 0 to disable"
 
   def generate(output_file)
     g = Generator.new(options)
