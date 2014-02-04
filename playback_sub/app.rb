@@ -29,3 +29,5 @@ class Post
     end
   end
 end
+
+Promiscuous::CLI.new.subscribe
