@@ -1,3 +1,7 @@
+#!/usr/bin/env ruby
+require 'bundler'
+Bundler.require
+
 class Promiscuous::Subscriber::Worker::MessageSynchronizer
   remove_const :CLEANUP_INTERVAL
   CLEANUP_INTERVAL = 2
