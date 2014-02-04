@@ -2,9 +2,6 @@
 require 'bundler'
 Bundler.require
 
-$current_worker = ENV['WORKER_INDEX'].to_i
-$master_worker = $current_worker == 0
-
 Promiscuous.configure do |config|
   config.app = 'playback_pub'
   config.amqp_url = 'amqp://guest:guest@localhost:5672'
