@@ -25,7 +25,9 @@ Promiscuous.configure do |config|
   config.prefetch = 1000
   config.hash_size = 0
   config.subscriber_threads = 1
-  config.redis_urls = $master.lrange("ip:redis", 0, -1).map { |r| "redis://#{r}/" }
+  config.redis_urls = $master.lrange("ip:redis", 0, -1)
+                        .select.with_index { |x,i| i % 2 != 0 }
+                        .map { |r| "redis://#{r}/" }
 end
 
 Promiscuous::Config.logger.level = 1

@@ -11,7 +11,9 @@ Promiscuous.configure do |config|
   config.app = 'playback_pub'
   config.amqp_url = 'amqp://guest:guest@localhost:5672'
   config.hash_size = 0
-  config.redis_urls = $master.lrange("ip:redis", 0, -1).map { |r| "redis://#{r}/" }
+  config.redis_urls = $master.lrange("ip:redis", 0, -1)
+                        .select.with_index { |x,i| i % 2 == 0 }
+                        .map { |r| "redis://#{r}/" }
 end
 
 Promiscuous::Config.logger.level = 1
