@@ -24,7 +24,7 @@ Promiscuous.configure do |config|
   config.amqp_url = "amqp://guest:guest@#{amqp_ip}:5672"
   config.prefetch = 100
   config.subscriber_threads = 1
-  config.redis_urls = $master.lrange("ip:redis", 0, -1)
+  config.redis_urls = $master.lrange("ip:redis", 0, -1).map { |r| "redis://#{r}/" }
 end
 
 Promiscuous::Config.logger.level = 1
