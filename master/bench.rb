@@ -149,7 +149,7 @@ end
 
 def benchmark_all
   num_workers = [1,3,5,10,30,50]
-  num_users = [3000]
+  num_users = [300, 3000]
   # num_users = [1, 10, 100, 1000]
 
   num_users.each do |nu|

@@ -50,7 +50,7 @@ def playback
 
       rdeps = json['dependencies']['read']
       if rdeps
-        c = Promiscuous::Context.current
+        c = Promiscuous::Publisher::Context.current
         c.extra_dependencies = rdeps.map { |d| Promiscuous::Dependency.parse(d, :type => :read) }
       end
 
