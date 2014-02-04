@@ -3,15 +3,15 @@ require 'bundler'
 require 'redis'
 Bundler.require
 
-master = Redis.new(:url => 'redis://master/')
+$master = Redis.new(:url => 'redis://master/')
 
-master.rpush("ip:pub", `hostname -i`)
+$master.rpush("ip:pub", `hostname -i`)
 
 Promiscuous.configure do |config|
   config.app = 'playback_pub'
   config.amqp_url = 'amqp://guest:guest@localhost:5672'
   config.hash_size = 0
-  config.redis_urls = master.lrange("ip:redis", 0, -1)
+  config.redis_urls = $master.lrange("ip:redis", 0, -1)
 end
 
 Promiscuous::Config.logger.level = 1
@@ -19,7 +19,7 @@ Promiscuous::Config.logger.level = 1
 class Promiscuous::Publisher::Operation::Ephemeral
   def execute
     super do
-      master.incr('pub_msg')
+      $master.incr('pub_msg')
       sleep ENV['PUB_LATENCY'].to_f
     end
   end
@@ -57,7 +57,7 @@ end
 
 def wait_for_start_signal
   loop do
-    return if master.get("start_pub")
+    return if $master.get("start_pub")
     sleep 0.1
   end
 end
