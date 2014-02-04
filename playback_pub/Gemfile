@@ -1,4 +1,4 @@
 source 'https://rubygems.org'
 
-gem 'pry'
-gem 'promiscuous', :path => '~/promiscuous'
+gem 'pry', :require => false
+gem 'promiscuous', :git => 'git://master/promiscuous.git'
