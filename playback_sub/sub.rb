@@ -40,6 +40,7 @@ class Post
   end
 end
 
-Promiscuous::CLI.new.subscribe
-
+Promiscuous::Subscriber::Worker.new.start
 $master.rpush("ip:sub", `hostname -i`.strip)
+
+sleep 100000
