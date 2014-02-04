@@ -1,37 +1,25 @@
 #!/usr/bin/env ruby
 require 'bundler'
+require 'redis'
 Bundler.require
+
+master = Redis.new(:url => 'redis://master/')
+
+master.rpush("ip:pub", `hostname -i`)
 
 Promiscuous.configure do |config|
   config.app = 'playback_pub'
   config.amqp_url = 'amqp://guest:guest@localhost:5672'
   config.hash_size = 0
-  config.redis_urls = ["redis://localhost"]
+  config.redis_urls = master.lrange("ip:redis", 0, -1)
 end
 
 Promiscuous::Config.logger.level = 1
 
-Promiscuous::Redis.master.flushdb
-
-$message_count = 0
-
-def wait_for_workers
-  n = ENV['NUM_WORKERS'].to_i
-  return if n.zero?
-  Promiscuous::Redis.master.incr("num_workers")
-
-  loop do
-    return if Promiscuous::Redis.master.get("num_workers").to_i == n
-    sleep 0.2
-  end
-end
-
-# wait_for_workers
-
 class Promiscuous::Publisher::Operation::Ephemeral
   def execute
     super do
-      Promiscuous::Redis.master.incr('num_msgs')
+      master.incr('pub_msg')
       sleep ENV['PUB_LATENCY'].to_f
     end
   end
@@ -66,4 +54,13 @@ def playback
     end
   end
 end
+
+def wait_for_start_signal
+  loop do
+    return if master.get("start_pub")
+    sleep 0.1
+  end
+end
+wait_for_start_signal
+
 playback
