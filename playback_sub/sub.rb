@@ -30,9 +30,6 @@ end
 
 Promiscuous::Config.logger.level = 1
 
-$master.rpush("ip:sub", `hostname -i`.strip)
-sleep 10000
-
 class Post
   include Promiscuous::Subscriber::Model::Observer
   subscribe
@@ -44,3 +41,5 @@ class Post
 end
 
 Promiscuous::CLI.new.subscribe
+
+$master.rpush("ip:sub", `hostname -i`.strip)
