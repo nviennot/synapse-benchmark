@@ -5,7 +5,7 @@ Bundler.require
 
 $master = Redis.new(:url => 'redis://master/')
 
-$master.rpush("ip:pub", `hostname -i`)
+$master.rpush("ip:pub", `hostname -i`.strip)
 
 Promiscuous.configure do |config|
   config.app = 'playback_pub'

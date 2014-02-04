@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require 'bundler'
+require 'redis'
 Bundler.require
 
 $master = Redis.new(:url => 'redis://master/')
@@ -28,7 +29,7 @@ end
 
 Promiscuous::Config.logger.level = 1
 
-$master.rpush("ip:sub", `hostname -i`)
+$master.rpush("ip:sub", `hostname -i`.strip)
 
 class Post
   include Promiscuous::Subscriber::Model::Observer
