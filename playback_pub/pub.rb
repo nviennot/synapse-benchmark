@@ -11,6 +11,8 @@ end
 
 Promiscuous::Config.logger.level = 1
 
+Promiscuous::Redis.master.flushdb
+
 $message_count = 0
 
 def wait_for_workers
