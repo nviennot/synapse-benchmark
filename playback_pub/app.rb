@@ -7,31 +7,14 @@ $master_worker = $current_worker == 0
 
 Promiscuous.configure do |config|
   config.app = 'playback_pub'
-  config.backend = :null
-  config.stats_interval = $master_worker ? 3 : 10000
+  config.amqp_url = 'amqp://guest:guest@localhost:5672'
   config.hash_size = 0
-  # config.redis_urls = 2.times.map { |i| "redis://localhost:#{6379+i}" }
+  config.redis_urls = ["redis://localhost"]
 end
 
 Promiscuous::Config.logger.level = 1
 
-class Promiscuous::AMQP::Null
-  def publish(options={})
-    Promiscuous.debug "[publish] #{options[:key]} #{options[:payload]}"
-    options[:on_confirm].try(:call)
-  end
-end
-
 $message_count = 0
-
-Thread.new do
-  loop do
-    sleep 1
-    if Promiscuous::Redis.master.get('kill_workers')
-      Process.kill("SIGKILL", Process.pid)
-    end
-  end
-end
 
 def wait_for_workers
   n = ENV['NUM_WORKERS'].to_i
@@ -44,7 +27,7 @@ def wait_for_workers
   end
 end
 
-wait_for_workers
+# wait_for_workers
 
 class Promiscuous::Publisher::Operation::Ephemeral
   def execute
