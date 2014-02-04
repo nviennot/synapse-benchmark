@@ -22,7 +22,7 @@ end
 Promiscuous.configure do |config|
   config.app = 'playback_sub'
   config.amqp_url = "amqp://guest:guest@#{amqp_ip}:5672"
-  config.prefetch = 100
+  config.prefetch = 1000
   config.subscriber_threads = 1
   config.redis_urls = $master.lrange("ip:redis", 0, -1).map { |r| "redis://#{r}/" }
 end
