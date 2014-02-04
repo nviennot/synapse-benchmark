@@ -45,9 +45,6 @@ class Post
   track_dependencies_of :user_id
 end
 
-puts "running..."
-STDERR.puts "(e) running..."
-
 def playback
   file = File.open(ENV['PLAYBACK_FILE'], 'r')
   worker_index = ENV['WORKER_INDEX'].to_i
