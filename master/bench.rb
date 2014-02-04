@@ -1,11 +1,20 @@
 #!/usr/bin/env ruby
 require './boot'
 
+class Deadlock < RuntimeError; end
+
 def clean_rabbitmq(options={})
-  run <<-SCRIPT, "Purging RabbitMQ", options.merge(:tag => :pub)
+  run <<-SCRIPT, "Purging RabbitMQ", :tag => :pub
     rabbitmqctl stop_app   &&
     rabbitmqctl reset      &&
     rabbitmqctl start_app
+  SCRIPT
+end
+
+def update_hosts
+  run <<-SCRIPT, "Updating /etc/hosts"
+    HOST=`/root/get_abricot_redis`
+    sed -i "s/^.* master$/$HOST master/" /etc/hosts
   SCRIPT
 end
 
@@ -18,7 +27,7 @@ end
 
 def fetch_datafile(options={})
   file = options[:playback_file]
-  run <<-SCRIPT, "Fetching #{file}", options.merge(:tag => :pub)
+  run <<-SCRIPT, "Fetching #{file}", :tag => :pub
     mkdir -p /tmp/data
     cd /tmp/data
     [ -e #{file} ] || wget -q http://master/#{file}
@@ -26,8 +35,6 @@ def fetch_datafile(options={})
 end
 
 def run_publisher(options={})
-  fetch_datafile(options)
-
   run <<-SCRIPT, "Running publishers", options.merge(:tag => :pub)
     cd /srv/stream-analyzer/playback_pub
 
@@ -57,25 +64,31 @@ def run_benchmark(options={})
   kill_all
   @master.flushdb
 
+  options = options.merge(:playback_file => "data_#{options[:num_users]}.json")
+
+  fetch_datafile(options)
   clean_rabbitmq(options)
   register_redis_ips
-  Thread.new { run_publisher(options.merge(:playback_file => "data_#{options[:num_users]}.json")) }
+  Thread.new { run_publisher(options) }
   Thread.new { run_subscriber(options) }
 
-  STDERR.puts "Waiting for the publishers and subscribers to get ready..."
+  start = Time.now
   loop do
     sleep 0.1
     break if @master.llen("ip:sub") == options[:num_workers]
+    if Time.now - start > 30
+      raise Deadlock
+    end
   end
 
   STDERR.puts 'Starting...'
-  sleep 3
   @master.set("start_pub", "1")
 end
 
+
 def _rate_sample
-  num_samples = 20
-  num_average = num_samples / 2
+  num_samples = 40 # must be divisible by 4
+  num_dropped = num_samples / 4
 
   num_msg_since_last = @master.getset('sub_msg', 0).to_i
   new_time, @last_time_read = @last_time_read, Time.now
@@ -84,11 +97,18 @@ def _rate_sample
   delta = @last_time_read - new_time
   rate = num_msg_since_last / delta
 
+
+  if @rates.size >= 3 && @rates[-3..-1].all? { |r| r.zero? }
+    raise Deadlock
+  end
+
   @rates << rate
   STDERR.puts "Sampling: #{rate.round(1)}q/s #{@rates.size}/#{num_samples}"
   return unless @rates.size == num_samples
 
-  avg_rate = @rates.sort_by { |x| -x }.take(num_average).reduce(:+) / num_average
+  sampled_rates = @rates.sort_by { |x| -x }.to_a[num_dropped/2 ... -num_dropped/2]
+  avg_rate = sampled_rates.reduce(:+) / sampled_rates.size.to_f
+
   STDERR.puts "Sampling avg rate: #{avg_rate}"
   kill_all
   return avg_rate
@@ -105,21 +125,32 @@ def rate_sample
 end
 
 def benchmark_once(num_users, num_workers)
-  run_benchmark(:num_users => num_users, :num_workers => num_workers)
-  rate = rate_sample.round(1)
+  tries = 3
 
-  result = "#{num_users} #{num_workers} #{rate}"
+  begin
+    tries -= 1
+    run_benchmark(:num_users => num_users, :num_workers => num_workers)
+    rate = rate_sample.round(1)
 
-  STDERR.puts ">>>>>> \e[1;36m #{result}\e[0m"
-  File.open("results", "a") do |f|
-    f.puts result
+    result = "#{num_users} #{num_workers} #{rate}"
+
+    STDERR.puts ">>>>>> \e[1;36m #{result}\e[0m"
+    File.open("results", "a") do |f|
+      f.puts result
+    end
+  rescue Deadlock
+    STDERR.puts ">>>>>> \e[1;31m Deadlocked :(\e[0m"
+    if tries > 0
+      STDERR.puts ">>>>>> \e[1;31m Retrying...\e[0m"
+      retry
+    end
   end
 end
 
-
 def benchmark_all
   num_workers = [1,3,5,10,30,50]
-  num_users = [3, 30, 300, 3000]
+  num_users = [3000]
+  # num_users = [1, 10, 100, 1000]
 
   num_users.each do |nu|
     num_workers.each do |nw|
@@ -130,15 +161,7 @@ end
 
 kill_all
 @master = Redis.new(:url => 'redis://master/')
+# update_hosts
 # update_app
-
-# benchmark_once(3,1)
-# benchmark_once(30,1)
-# benchmark_once(30,3)
-# benchmark_once(30,5)
-# benchmark_once(30,10)
-# benchmark_once(30,30)
-# benchmark_once(300,1)
-# benchmark_once(3000,1)
-
-# benchmark_all
+benchmark_all
+# benchmark_once(300, 50)

@@ -6,7 +6,7 @@ set output "throughput-vs-worker.pdf"
 #set format y "%.0e"
 set ylabel "Throughput [msg/s]" font "Times-Roman,14"
 #set ylabel offset +1.2,0
-set yrange [200:6000]
+set yrange [100:6000]
 
 set xlabel "Number of Workers" font "Times-Roman,14"
 #set xlabel offset 0,+1
@@ -16,7 +16,7 @@ set ytics font "Times-Roman,14"
 
 set logscale xy
 
-set ytics (200,300,400,600,800,1000,1500,2000,3000,4000,5000)
+set ytics (100, 200,300,400,600,800,1000,1500,2000,3000,4000,5000)
 set grid ytics
 # set ytics 250 font "Times-Roman,14"
 

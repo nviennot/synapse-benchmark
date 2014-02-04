@@ -46,12 +46,17 @@ def playback
 
     Promiscuous.context(:bench) do
       json = MultiJson.load(line)
-      deps = json['dependencies']['write']
+      wdeps = json['dependencies']['write']
 
-      # c = Promiscuous::Context.current
+      rdeps = json['dependencies']['read']
+      if rdeps
+        c = Promiscuous::Context.current
+        c.extra_dependencies = rdeps.map { |d| Promiscuous::Dependency.parse(d, :type => :read) }
+      end
+
       p = Post.new
-      p.id = deps[1].split(':').first.split('_').last
-      p.user_id = deps[0].split(':').first.split('_').last
+      p.id = wdeps[1].split(':').first.split('_').last
+      p.user_id = wdeps[0].split(':').first.split('_').last
       p.save
     end
   end
