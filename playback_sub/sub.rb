@@ -3,7 +3,7 @@ require 'bundler'
 require 'redis'
 Bundler.require
 
-$master = Redis.new(:url => 'redis://master/')
+$master = Redis.new(:url => 'redis://master/2')
 
 worker_index = ENV['WORKER_INDEX'].to_i
 amqp_ip = nil

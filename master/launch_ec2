@@ -1,0 +1,9 @@
+#!/bin/bash
+NUM=$1
+ROLE=$2
+
+source aws_keys
+
+mkdir -p /tmp/ec2/
+ec2-run-instances ami-9bfdf8f2 -t c3.large -z us-east-1a -g promiscuous-sg -n $NUM | tee /tmp/ec2/$ROLE
+ec2-create-tags `cat /tmp/ec2/$ROLE | grep '^INSTANCE' | awk '{print $2}'` -t Role=$ROLE
