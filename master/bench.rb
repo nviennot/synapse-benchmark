@@ -66,8 +66,8 @@ def run_benchmark(options={})
 
   options = options.merge(:playback_file => "data_#{options[:num_users]}.json")
 
-  fetch_datafile(options)
-  clean_rabbitmq(options)
+  # fetch_datafile(options)
+  # clean_rabbitmq(options)
   register_redis_ips
   Thread.new { run_publisher(options) }
   Thread.new { run_subscriber(options) }
@@ -149,7 +149,7 @@ end
 
 def benchmark_all
   num_workers = [1,3,5,10,30,50]
-  num_users = [300, 3000]
+  num_users = [3, 30]
   # num_users = [1, 10, 100, 1000]
 
   num_users.each do |nu|
@@ -163,5 +163,5 @@ kill_all
 @master = Redis.new(:url => 'redis://master/')
 # update_hosts
 # update_app
-benchmark_all
-# benchmark_once(300, 50)
+# benchmark_all
+benchmark_once(300, 10)
