@@ -14,9 +14,9 @@ end
 
 class Promiscuous::Subscriber::Worker::MessageSynchronizer
   remove_const :CLEANUP_INTERVAL
-  CLEANUP_INTERVAL = 2
+  CLEANUP_INTERVAL = 10
   remove_const :QUEUE_MAX_AGE
-  QUEUE_MAX_AGE    = 5
+  QUEUE_MAX_AGE    = 100
 end
 
 Promiscuous.configure do |config|
@@ -25,8 +25,8 @@ Promiscuous.configure do |config|
   config.prefetch = 1000
   config.hash_size = 0
   config.subscriber_threads = 1
-  config.redis_urls = $master.lrange("ip:redis", 0, -1)
-                        .select.with_index { |x,i| i % 2 != 0 }
+  config.redis_urls = $master.lrange("ip:sub_redis", 0, -1)
+                        .take(ENV['NUM_REDIS'].to_i)
                         .map { |r| "redis://#{r}/" }
 end
 

@@ -5,8 +5,7 @@ require 'abricot/master'
 
 @abricot = Abricot::Master.new(:redis => 'redis://master/2')
 def run(script, desc, options={})
-  STDERR.puts "\033[1;33m---> #{desc}...\033[0m"
-  @abricot.exec(script, options.merge(:script => true))
+  @abricot.exec(script, options.merge(:name => desc))
 end
 
 def kill_all

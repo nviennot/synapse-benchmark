@@ -102,8 +102,7 @@ class Generator
     @friend_distribution = Zipfian.new(options[:max_num_friends], options[:coeff_num_friends])
     @num_ops_per_users = options[:total] / @num_users
 
-    @op_interaction_distribution = Zipfian.new(@num_ops_per_users, options[:coeff_interactions_ratio])
-
+    @op_interaction_distribution = Zipfian.new(@num_ops_per_users, options[:coeff_interactions_ratio]) 
     @coeff_friend_activity = options[:coeff_friend_activity]
   end
 
