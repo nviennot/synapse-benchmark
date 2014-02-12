@@ -22,6 +22,10 @@ def update_app
   run <<-SCRIPT, "app git pull"
     cd /srv/stream-analyzer/playback_pub
     git pull
+    unset BUNDLE_GEMFILE
+    rm -rf /usr/local/rvm/gems/ruby-2.0.0-p353@stream-analyzer/cache
+    rm -rf /usr/local/rvm/gems/ruby-2.0.0-p353@stream-analyzer/cache
+    rvm ruby-2.0@stream-analyzer do bundle install
   SCRIPT
 end
 
@@ -179,9 +183,9 @@ end
 kill_all
 @master = Redis.new(:url => 'redis://master/')
 # update_hosts
-# update_app
+update_app
 # benchmark_all
-benchmark_once(2, 2)
+# benchmark_once(300, 2)
 
 # ENV['MAX_NUM_FRIENDS'] = 100.to_s
 # ENV['COEFF_NUM_FRIENDS'] = 0.8.to_s

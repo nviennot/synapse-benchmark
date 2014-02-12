@@ -1,6 +1,6 @@
 GIT
-  remote: git://master/promiscuous.git
-  revision: 6131f9c061cb2b1960124c8d67ec71ee3743c6ab
+  remote: https://github.com/promiscuous-io/promiscuous.git
+  revision: 4ffa4bc49fbfca036dcf323c1946a87d426424a6
   branch: master
   specs:
     promiscuous (0.91.0)
@@ -12,7 +12,7 @@ GIT
       fnv (= 0.2.0)
       multi_json (~> 1.8.0)
       redis (~> 3.0.2)
-      ruby-progressbar (~> 1.2.0)
+      ruby-progressbar (~> 1.4.0)
 
 GEM
   remote: https://rubygems.org/
@@ -41,17 +41,17 @@ GEM
     method_source (0.8.2)
     minitest (4.7.5)
     multi_json (1.8.4)
-    pry (0.9.12.3)
+    pry (0.9.12.6)
       coderay (~> 1.0)
       method_source (~> 0.8)
       slop (~> 3.4)
-    pry (0.9.12.3-java)
+    pry (0.9.12.6-java)
       coderay (~> 1.0)
       method_source (~> 0.8)
       slop (~> 3.4)
       spoon (~> 0.0)
     redis (3.0.7)
-    ruby-progressbar (1.2.0)
+    ruby-progressbar (1.4.1)
     slop (3.4.7)
     spoon (0.0.4)
       ffi
