@@ -21,22 +21,22 @@ end
 
 def update_app
   run <<-SCRIPT, "app git pull"
-    cd /srv/stream-analyzer/playback_pub
+    cd /srv/promiscuous-benchmark/playback_pub
     git pull
     # git reset --hard origin/master
     # unset BUNDLE_GEMFILE
     # unset RVM_ENV
     # unset BUNDLE_BIN_PATH
     # unset RUBYOPT
-    # rvm ruby-2.0@stream-analyzer do bundle install
-    # cd /srv/stream-analyzer/playback_sub
-    # rvm ruby-2.0@stream-analyzer do bundle install
+    # rvm ruby-2.0@promiscuous-benchmark do bundle install
+    # cd /srv/promiscuous-benchmark/playback_sub
+    # rvm ruby-2.0@promiscuous-benchmark do bundle install
   SCRIPT
 end
 
 def run_publisher(options={})
   run <<-SCRIPT, "Running publishers", options.merge(:tag => :pub)
-    cd /srv/stream-analyzer/playback_pub
+    cd /srv/promiscuous-benchmark/playback_pub
 
     export MAX_NUM_FRIENDS=#{options[:max_num_friends]}
     export COEFF_NUM_FRIENDS=#{options[:coeff_num_friends]}
@@ -51,7 +51,7 @@ end
 
 def run_subscriber(options={})
   run <<-SCRIPT, "Running subscribers", options.merge(:tag => :sub)
-    cd /srv/stream-analyzer/playback_sub
+    cd /srv/promiscuous-benchmark/playback_sub
 
     #{"export NUM_REDIS=#{options[:num_sub_redis]}" if options[:num_sub_redis]}
     #{"export SUB_LATENCY=#{options[:sub_latency]}" if options[:sub_latency]}
