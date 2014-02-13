@@ -57,7 +57,7 @@ def generate_users
 end
 generate_users
 
-if $users.empty?
+if @users.empty?
   puts "no users..."
   exit
 end

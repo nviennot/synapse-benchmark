@@ -199,5 +199,5 @@ begin
   # ENV['NUM_USERS'] = 30.to_s
   # ENV['COEFF_FRIEND_ACTIVITY'].to_f
 rescue Exception => e
-  puts e
+  STDERR.puts e.message
 end
