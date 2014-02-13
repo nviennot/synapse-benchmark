@@ -70,7 +70,7 @@ def publish
 
       post_id, friends_post_ids = $master.pipelined do
         $master.incr("pub:#{user_id}:latest_post_id")
-        $master.mget(friends.map { |friend_id| "pub:#{friend_id}:latest_post_id"})
+        $master.mget(friends.map { |friend_id| "pub:#{friend_id}:latest_post_id"}) unless friends.empty?
       end
 
       p = Post.new
@@ -78,7 +78,7 @@ def publish
       p.user_id = user_id
 
       c = Promiscuous::Publisher::Context.current
-      c.extra_dependencies = friends.zip(friends_post_ids).map do |friend_id, fpost_id|
+      c.extra_dependencies = friends.zip(friends_post_ids.to_a).map do |friend_id, fpost_id|
         Promiscuous::Dependency.parse("posts/id/#{friend_id}_#{fpost_id}", :type => :read)
       end
 
