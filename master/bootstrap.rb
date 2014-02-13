@@ -9,7 +9,7 @@ def update_hosts
 end
 
 def update_app
-  run <<-SCRIPT, "app git pull"
+  run <<-SCRIPT, "Updating application"
     cd /srv/promiscuous-benchmark
     git pull
     git reset --hard origin/master

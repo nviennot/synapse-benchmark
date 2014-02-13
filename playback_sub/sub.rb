@@ -14,9 +14,9 @@ end
 
 class Promiscuous::Subscriber::Worker::MessageSynchronizer
   remove_const :CLEANUP_INTERVAL
-  CLEANUP_INTERVAL = 10
+  CLEANUP_INTERVAL = ENV['CLEANUP_INTERVAL'].to_i
   remove_const :QUEUE_MAX_AGE
-  QUEUE_MAX_AGE    = 100
+  QUEUE_MAX_AGE    = ENV['QUEUE_MAX_AGE'].to_i
 end
 
 Promiscuous.configure do |config|

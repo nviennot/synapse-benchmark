@@ -53,6 +53,9 @@ def run_subscriber(options={})
   run <<-SCRIPT, "Running subscribers", options.merge(:tag => :sub)
     cd /srv/promiscuous-benchmark/playback_sub
 
+    export CLEANUP_INTERVAL=#{options[:cleanup_interval]}
+    export QUEUE_MAX_AGE=#{options[:queue_max_age]}
+
     #{"export NUM_REDIS=#{options[:num_sub_redis]}" if options[:num_sub_redis]}
     #{"export SUB_LATENCY=#{options[:sub_latency]}" if options[:sub_latency]}
     #{ruby_exec "./sub.rb"}
@@ -81,6 +84,9 @@ def run_benchmark(options={})
 
   options[:num_pub_redis] = 3
   options[:num_sub_redis] = 3
+
+  options[:cleanup_interval] = 10
+  options[:queue_max_age] = 50
 
   @abricot.multi do
     clean_rabbitmq
