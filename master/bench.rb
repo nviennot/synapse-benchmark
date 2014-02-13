@@ -200,8 +200,8 @@ begin
   kill_all
   @master = Redis.new(:url => 'redis://master/')
   # benchmark_all
-  # update_app
-  benchmark_once(300, 1)
+  update_app
+  # benchmark_once(300, 1)
 rescue Exception => e
   STDERR.puts "-" * 80
   STDERR.puts e.message
