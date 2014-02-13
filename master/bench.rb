@@ -79,8 +79,8 @@ def run_benchmark(options={})
   options[:coeff_num_friends] = 0.8
   options[:coeff_friend_activity] = 1
 
-  options[:num_pub_redis] = 1
-  options[:num_sub_redis] = 1
+  options[:num_pub_redis] = 3
+  options[:num_sub_redis] = 3
 
   @abricot.multi do
     clean_rabbitmq
@@ -142,11 +142,14 @@ def rate_sample_workers(options={})
     options[:num_workers].times.each { |i| @worker_rates[i] = [] }
   end
 
-  rates = @master.mget(options[:num_workers].times.map { |i| "sub_msg:#{i}" })
-  rates.each_with_index { |r, i| @worker_rates[i] << (r - @worker_rates[i].last.to_i) }
+  rates = @master.mget(options[:num_workers].times.map { |i| "pub_msg:#{i}" })
+  rates.each_with_index { |r, i| @worker_rates[i] << r.to_i }
 
-  @worker_rates.each do |i, r|
-    puts "worker #{i}: #{r}"
+  @worker_rates.each do |i, worker_rate|
+    normalized_rates = []
+    last_rate = 0
+    worker_rate.each { |r| normalized_rates << r - last_rate; last_rate = r }
+    puts "worker #{i}: #{normalized_rates}"
   end
 end
 
@@ -204,7 +207,7 @@ begin
   kill_all
   @master = Redis.new(:url => 'redis://master/')
   # update_hosts
-  update_app
+  # update_app
   # benchmark_all
   benchmark_once(30000, 50)
 
@@ -215,5 +218,11 @@ begin
   # ENV['NUM_USERS'] = 30.to_s
   # ENV['COEFF_FRIEND_ACTIVITY'].to_f
 rescue Exception => e
+  STDERR.puts
+  STDERR.puts
+  STDERR.puts
   STDERR.puts e.message
+  STDERR.puts
+  STDERR.puts
+  STDERR.puts
 end
