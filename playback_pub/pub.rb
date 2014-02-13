@@ -57,7 +57,10 @@ def generate_users
 end
 generate_users
 
-exit if $users.empty?
+if $users.empty?
+  puts "no users..."
+  exit
+end
 
 def publish
   loop do
