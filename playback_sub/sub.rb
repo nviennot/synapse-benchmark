@@ -5,10 +5,10 @@ Bundler.require
 
 $master = Redis.new(:url => 'redis://master/')
 
-worker_index = ENV['WORKER_INDEX'].to_i
+$worker_index = ENV['WORKER_INDEX'].to_i
 amqp_ip = nil
 while amqp_ip.nil?
-  amqp_ip = $master.lrange("ip:pub", worker_index, worker_index).first
+  amqp_ip = $master.lrange("ip:pub", $worker_index, $worker_index).first
   sleep 0.1
 end
 
@@ -37,7 +37,10 @@ class Post
   subscribe
 
   after_create do
-    $master.incr('sub_msg')
+    $master.pipelined do
+      $master.incr("sub_msg")
+      $master.incr("sub_msg:#{$worker_index}")
+    end
     sleep ENV['SUB_LATENCY'].to_f
   end
 end

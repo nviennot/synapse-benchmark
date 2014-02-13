@@ -7,6 +7,8 @@ $master = Redis.new(:url => 'redis://master/')
 
 $master.rpush("ip:pub", `hostname -i`.strip)
 
+$worker_index = ENV['WORKER_INDEX'].to_i
+
 Promiscuous.configure do |config|
   config.app = 'playback_pub'
   config.amqp_url = 'amqp://guest:guest@localhost:5672'
@@ -21,7 +23,11 @@ Promiscuous::Config.logger.level = 1
 class Promiscuous::Publisher::Operation::Ephemeral
   def execute
     super do
-      $master.incr('pub_msg')
+      $master.pipelined do
+        $master.incr("pub_msg")
+        $master.incr("pub_msg:#{$worker_index}")
+      end
+
       sleep ENV['PUB_LATENCY'].to_f
     end
   end

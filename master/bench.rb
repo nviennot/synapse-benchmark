@@ -4,10 +4,11 @@ require './boot'
 class Deadlock < RuntimeError; end
 
 def clean_rabbitmq
-  run <<-SCRIPT, "Purging RabbitMQ", :tag => :pub, :num_workers => 1
+  run <<-SCRIPT, "Purging RabbitMQ", :tag => :pub
     sudo rabbitmqctl stop_app   &&
     sudo rabbitmqctl reset      &&
-    sudo rabbitmqctl start_app
+    sudo rabbitmqctl start_app  &&
+    sleep 1
   SCRIPT
 end
 
@@ -21,16 +22,15 @@ end
 def update_app
   run <<-SCRIPT, "app git pull"
     cd /srv/stream-analyzer/playback_pub
-    git pull
+    # git pull
     # git reset --hard origin/master
-    # cd /srv/stream-analyzer/playback_sub
-    # unset BUNDLE_GEMFILE
-    # unset RVM_ENV
-    # unset BUNDLE_BIN_PATH
-    # unset RUBYOPT
-    # rvm ruby-2.0@stream-analyzer do bundle install
-    # cd /srv/stream-analyzer/playback_sub
-    # rvm ruby-2.0@stream-analyzer do bundle install
+    unset BUNDLE_GEMFILE
+    unset RVM_ENV
+    unset BUNDLE_BIN_PATH
+    unset RUBYOPT
+    rvm ruby-2.0@stream-analyzer do bundle install
+    cd /srv/stream-analyzer/playback_sub
+    rvm ruby-2.0@stream-analyzer do bundle install
   SCRIPT
 end
 
@@ -110,7 +110,7 @@ end
 
 
 def _rate_sample
-  num_samples = 40 # must be divisible by 4
+  num_samples = 120 # must be divisible by 4
   num_dropped = num_samples / 4
 
   num_msg_since_last = @master.getset('sub_msg', 0).to_i
@@ -121,7 +121,7 @@ def _rate_sample
   rate = num_msg_since_last / delta
 
 
-  if @rates.size >= 3 && @rates[-3..-1].all? { |r| r.zero? }
+  if @rates.size >= 5 && @rates[-5..-1].all? { |r| r.zero? }
     raise Deadlock
   end
 
@@ -136,11 +136,26 @@ def _rate_sample
   return avg_rate
 end
 
-def rate_sample(jobs)
+def rate_sample_workers(options={})
+  unless @worker_rates
+    @worker_rates = {}
+    options[:num_workers].times.each { |i| @worker_rates[i] = [] }
+  end
+
+  rates = @master.mget(options[:num_workers].times.map { |i| "sub_msg:#{i}" })
+  rates.each_with_index { |r, i| @worker_rates[i] << (r - @worker_rates[i].last.to_i) }
+
+  @worker_rates.each do |i, r|
+    puts "worker #{i}: #{r}"
+  end
+end
+
+def rate_sample(jobs, options={})
   @last_time_read = nil
   @rates = []
   loop do
     sleep 1
+    rate_sample_workers(options)
     jobs.check_for_failures
     rate = _rate_sample
     return rate if rate
@@ -152,8 +167,9 @@ def benchmark_once(num_users, num_workers)
 
   begin
     tries -= 1
-    jobs = run_benchmark(:num_users => num_users, :num_workers => num_workers)
-    rate = rate_sample(jobs).round(1)
+    options = {:num_users => num_users, :num_workers => num_workers}
+    jobs = run_benchmark(options)
+    rate = rate_sample(jobs, options).round(1)
     jobs.kill
 
     result = "#{num_users} #{num_workers} #{rate}"
@@ -188,9 +204,9 @@ begin
   kill_all
   @master = Redis.new(:url => 'redis://master/')
   # update_hosts
-  update_app
+  # update_app
   # benchmark_all
-  benchmark_once(10, 10)
+  benchmark_once(30000, 50)
 
   # ENV['MAX_NUM_FRIENDS'] = 100.to_s
   # ENV['COEFF_NUM_FRIENDS'] = 0.8.to_s
