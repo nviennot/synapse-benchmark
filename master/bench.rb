@@ -3,34 +3,31 @@ require './boot'
 
 class Deadlock < RuntimeError; end
 
+def update_app
+  run <<-SCRIPT, "app git pull"
+    cd /srv/promiscuous-benchmark/playback_pub &&
+    git pull
+  SCRIPT
+end
+
+def register_redis_ips
+  run <<-SCRIPT, "Prepping redis (sub)", :tag => :sub_redis
+    redis-cli -h localhost flushdb &&
+    redis-cli -h master rpush ip:sub_redis `hostname -i`
+  SCRIPT
+
+  run <<-SCRIPT, "Prepping redis (pub)", :tag => :pub_redis
+    redis-cli -h localhost flushdb &&
+    redis-cli -h master rpush ip:pub_redis `hostname -i`
+  SCRIPT
+end
+
 def clean_rabbitmq
   run <<-SCRIPT, "Purging RabbitMQ", :tag => :pub
     sudo rabbitmqctl stop_app   &&
     sudo rabbitmqctl reset      &&
     sudo rabbitmqctl start_app  &&
     sleep 1
-  SCRIPT
-end
-
-def update_hosts
-  run <<-SCRIPT, "Updating /etc/hosts"
-    HOST=`/root/get_abricot_redis`
-    sed -i "s/^.* master$/$HOST master/" /etc/hosts
-  SCRIPT
-end
-
-def update_app
-  run <<-SCRIPT, "app git pull"
-    cd /srv/promiscuous-benchmark/playback_pub
-    git pull
-    # git reset --hard origin/master
-    # unset BUNDLE_GEMFILE
-    # unset RVM_ENV
-    # unset BUNDLE_BIN_PATH
-    # unset RUBYOPT
-    # rvm ruby-2.0@promiscuous-benchmark do bundle install
-    # cd /srv/promiscuous-benchmark/playback_sub
-    # rvm ruby-2.0@promiscuous-benchmark do bundle install
   SCRIPT
 end
 
@@ -41,7 +38,7 @@ def run_publisher(options={})
     export MAX_NUM_FRIENDS=#{options[:max_num_friends]}
     export COEFF_NUM_FRIENDS=#{options[:coeff_num_friends]}
     export NUM_USERS=#{options[:num_users]}
-    export COEFF_FRIEND_ACTIVITY=#{options[:coeff_friend_activity]}
+    export HASH_SIZE=#{options[:hash_size]}
 
     #{"export NUM_REDIS=#{options[:num_pub_redis]}" if options[:num_pub_redis]}
     #{"export PUB_LATENCY=#{options[:pub_latency]}" if options[:pub_latency]}
@@ -55,22 +52,11 @@ def run_subscriber(options={})
 
     export CLEANUP_INTERVAL=#{options[:cleanup_interval]}
     export QUEUE_MAX_AGE=#{options[:queue_max_age]}
+    export PREFETCH=#{options[:prefetch]}
 
     #{"export NUM_REDIS=#{options[:num_sub_redis]}" if options[:num_sub_redis]}
     #{"export SUB_LATENCY=#{options[:sub_latency]}" if options[:sub_latency]}
     #{ruby_exec "./sub.rb"}
-  SCRIPT
-end
-
-def register_redis_ips
-  run <<-SCRIPT, "Prepping redis (sub)", :tag => :sub_redis
-    redis-cli -h localhost flushdb
-    redis-cli -h master rpush ip:sub_redis `hostname -i`
-  SCRIPT
-
-  run <<-SCRIPT, "Prepping redis (pub)", :tag => :pub_redis
-    redis-cli -h localhost flushdb
-    redis-cli -h master rpush ip:pub_redis `hostname -i`
   SCRIPT
 end
 
@@ -80,13 +66,14 @@ def run_benchmark(options={})
 
   options[:max_num_friends] = 500
   options[:coeff_num_friends] = 0.8
-  options[:coeff_friend_activity] = 1
 
   options[:num_pub_redis] = 3
   options[:num_sub_redis] = 3
 
   options[:cleanup_interval] = 10
   options[:queue_max_age] = 50
+  options[:hash_size] = 1000
+  options[:prefetch] = 100
 
   @abricot.multi do
     clean_rabbitmq
@@ -116,7 +103,7 @@ end
 
 
 def _rate_sample
-  num_samples = 120 # must be divisible by 4
+  num_samples = 40 # must be divisible by 4
   num_dropped = num_samples / 4
 
   num_msg_since_last = @master.getset('sub_msg', 0).to_i
@@ -148,7 +135,7 @@ def rate_sample_workers(options={})
     options[:num_workers].times.each { |i| @worker_rates[i] = [] }
   end
 
-  rates = @master.mget(options[:num_workers].times.map { |i| "pub_msg:#{i}" })
+  rates = @master.mget(options[:num_workers].times.map { |i| "sub_msg:#{i}" })
   rates.each_with_index { |r, i| @worker_rates[i] << r.to_i }
 
   @worker_rates.each do |i, worker_rate|
@@ -212,23 +199,10 @@ end
 begin
   kill_all
   @master = Redis.new(:url => 'redis://master/')
-  # update_hosts
-  # update_app
   # benchmark_all
-  benchmark_once(30000, 50)
-
-  # ENV['MAX_NUM_FRIENDS'] = 100.to_s
-  # ENV['COEFF_NUM_FRIENDS'] = 0.8.to_s
-  # ENV['WORKER_INDEX'] = 0.to_s
-  # ENV['NUM_WORKERS'] = 7.to_s
-  # ENV['NUM_USERS'] = 30.to_s
-  # ENV['COEFF_FRIEND_ACTIVITY'].to_f
+  # update_app
+  benchmark_once(300, 1)
 rescue Exception => e
-  STDERR.puts
-  STDERR.puts
-  STDERR.puts
+  STDERR.puts "-" * 80
   STDERR.puts e.message
-  STDERR.puts
-  STDERR.puts
-  STDERR.puts
 end

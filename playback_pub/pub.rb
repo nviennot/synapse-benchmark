@@ -12,7 +12,7 @@ $worker_index = ENV['WORKER_INDEX'].to_i
 Promiscuous.configure do |config|
   config.app = 'playback_pub'
   config.amqp_url = 'amqp://guest:guest@localhost:5672'
-  config.hash_size = 0
+  config.hash_size = ENV['HASH_SIZE'].to_i
   config.redis_urls = $master.lrange("ip:pub_redis", 0, -1)
                         .take(ENV['NUM_REDIS'].to_i)
                         .map { |r| "redis://#{r}/" }
@@ -28,16 +28,17 @@ class Promiscuous::Publisher::Operation::Ephemeral
         $master.incr("pub_msg:#{$worker_index}")
       end
 
-      sleep ENV['PUB_LATENCY'].to_f
+      sleep ENV['PUB_LATENCY'].to_f if ENV['PUB_LATENCY']
     end
   end
 end
 
-class Post
-  include Promiscuous::Publisher::Model::Ephemeral
-  attr_accessor :user_id
-  publish :user_id
-  track_dependencies_of :user_id
+module Promiscuous::Publisher::Model::Ephemeral
+  def read
+    op = Promiscuous::Publisher::Operation::NonPersistent
+      .new(:instances => [self], :operation => :read)
+    Promiscuous::Publisher::Context.current.read_operations << op
+  end
 end
 
 def generate_users
@@ -59,7 +60,6 @@ def generate_users
   end
 
   @users = friends
-  @publish_zipf = Hash[friends.map { |user_id, all_friends| [user_id, Zipfian.new([all_friends.size, 1].max, ENV['COEFF_FRIEND_ACTIVITY'].to_f)] }]
 end
 generate_users
 
@@ -68,27 +68,62 @@ if @users.empty?
   exit
 end
 
+#-------------------------------------------------------------
+
+class User
+  include Promiscuous::Publisher::Model::Ephemeral
+end
+
+class Post
+  include Promiscuous::Publisher::Model::Ephemeral
+  publish :user_id
+  # track_dependencies_of :user_id
+end
+
+class Comment
+  include Promiscuous::Publisher::Model::Ephemeral
+  publish :user_id
+  publish :post_id
+end
+
+def create_post(user_id)
+  current_user = User.new(:id => user_id)
+  current_user.read
+
+  pid = $master.incr("pub:#{user_id}:latest_post_id")
+  post_id = "#{user_id}_#{pid}"
+  post = Post.new(:id => post_id, :user_id => user_id)
+  post.save
+end
+
+def create_comment(user_id)
+  friend_id = @users[user_id].sample
+  return create_post(user_id) unless friend_id
+
+  friend = User.new(:id => friend_id)
+  friend.read
+
+  current_user = User.new(:id => user_id)
+  current_user.read
+
+  pid = $master.get("pub:#{friend_id}:latest_post_id").to_i
+  post_id = "#{friend_id}_#{pid}"
+  post = Post.new(:id => post_id, :user_id => friend_id)
+  post.read
+
+  comment = Comment.new(:id => "#{post_id}_#{rand(1..2**4)}")
+  comment.save
+end
+
 def publish
   loop do
     Promiscuous.context(:bench) do
-      user_id, all_friends = @users.to_a.sample
-      friends = all_friends.sample(@publish_zipf[user_id].sample)
-
-      post_id, friends_post_ids = $master.pipelined do
-        $master.incr("pub:#{user_id}:latest_post_id")
-        $master.mget(friends.map { |friend_id| "pub:#{friend_id}:latest_post_id"}) unless friends.empty?
+      user_id = @users.keys.sample
+      if rand(1..3) == 1
+        create_post(user_id)
+      else
+        create_comment(user_id)
       end
-
-      p = Post.new
-      p.id = "#{user_id}_#{post_id}"
-      p.user_id = user_id
-
-      c = Promiscuous::Publisher::Context.current
-      c.extra_dependencies = friends.zip(friends_post_ids.to_a).map do |friend_id, fpost_id|
-        Promiscuous::Dependency.parse("posts/id/#{friend_id}_#{fpost_id}", :type => :read)
-      end
-
-      p.save
     end
   end
 end

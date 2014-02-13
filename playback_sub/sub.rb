@@ -22,8 +22,7 @@ end
 Promiscuous.configure do |config|
   config.app = 'playback_sub'
   config.amqp_url = "amqp://guest:guest@#{amqp_ip}:5672"
-  config.prefetch = 1000
-  config.hash_size = 0
+  config.prefetch = ENV['PREFETCH'].to_i
   config.subscriber_threads = 1
   config.redis_urls = $master.lrange("ip:sub_redis", 0, -1)
                         .take(ENV['NUM_REDIS'].to_i)
@@ -41,7 +40,7 @@ class Post
       $master.incr("sub_msg")
       $master.incr("sub_msg:#{$worker_index}")
     end
-    sleep ENV['SUB_LATENCY'].to_f
+    sleep ENV['SUB_LATENCY'].to_f if ENV['SUB_LATENCY']
   end
 end
 

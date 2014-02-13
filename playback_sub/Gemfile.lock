@@ -1,5 +1,5 @@
 GIT
-  remote: https://github.com/promiscuous-io/promiscuous.git
+  remote: https://github.com/nviennot/promiscuous.git
   revision: 4ffa4bc49fbfca036dcf323c1946a87d426424a6
   branch: master
   specs:
@@ -27,10 +27,8 @@ GEM
       thread_safe (~> 0.1)
       tzinfo (~> 0.3.37)
     algorithms (0.6.1)
-    algorithms (0.6.1-java)
     amq-protocol (1.9.2)
     atomic (1.1.14)
-    atomic (1.1.14-java)
     builder (3.1.4)
     bunny (1.1.2)
       amq-protocol (>= 1.9.2)
@@ -56,8 +54,6 @@ GEM
     spoon (0.0.4)
       ffi
     thread_safe (0.1.3)
-      atomic
-    thread_safe (0.1.3-java)
       atomic
     tzinfo (0.3.38)
 
