@@ -20,12 +20,14 @@ end
 
 def update_app
   run <<-SCRIPT, "app git pull"
-    cd /srv/stream-analyzer/playback_pub
-    git pull
-    git reset --hard origin/master
+    # cd /srv/stream-analyzer/playback_pub
+    # git pull
+    # git reset --hard origin/master
+    cd /srv/stream-analyzer/playback_sub
     unset BUNDLE_GEMFILE
-    # echo "yes" | rvm gemset delete ruby-2.0@stream-analyzer
-    # rvm use ruby-2.0 do rvm gemset create stream-analyzer
+    unset RVM_ENV
+    unset BUNDLE_BIN_PATH
+    unset RUBYOPT
     rvm ruby-2.0@stream-analyzer do bundle install
   SCRIPT
 end
@@ -73,7 +75,6 @@ def run_benchmark(options={})
 
   options[:max_num_friends] = 500
   options[:coeff_num_friends] = 0.8
-  options[:num_users] = 30
   options[:coeff_friend_activity] = 1
 
   options[:num_pub_redis] = 1
@@ -181,16 +182,20 @@ def benchmark_all
   end
 end
 
-kill_all
-@master = Redis.new(:url => 'redis://master/')
-# update_hosts
-update_app
-# benchmark_all
-# benchmark_once(300, 2)
+begin
+  kill_all
+  @master = Redis.new(:url => 'redis://master/')
+  # update_hosts
+  # update_app
+  # benchmark_all
+  benchmark_once(3, 3)
 
-# ENV['MAX_NUM_FRIENDS'] = 100.to_s
-# ENV['COEFF_NUM_FRIENDS'] = 0.8.to_s
-# ENV['WORKER_INDEX'] = 0.to_s
-# ENV['NUM_WORKERS'] = 7.to_s
-# ENV['NUM_USERS'] = 30.to_s
-# ENV['COEFF_FRIEND_ACTIVITY'].to_f
+  # ENV['MAX_NUM_FRIENDS'] = 100.to_s
+  # ENV['COEFF_NUM_FRIENDS'] = 0.8.to_s
+  # ENV['WORKER_INDEX'] = 0.to_s
+  # ENV['NUM_WORKERS'] = 7.to_s
+  # ENV['NUM_USERS'] = 30.to_s
+  # ENV['COEFF_FRIEND_ACTIVITY'].to_f
+rescue Exception => e
+  puts e
+end
