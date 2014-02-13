@@ -52,16 +52,16 @@ def generate_users
     friends[user_id] = all_users.sample(friend_distribution.sample) - [user_id]
   end
 
-  @users = friends
-  @publish_zipf = Hash[@users.map { |user_id, all_friends| [user_id, Zipfian.new(all_friends.size, ENV['COEFF_FRIEND_ACTIVITY'].to_f)] }]
+  $users = friends
+  $publish_zipf = Hash[friends.map { |user_id, all_friends| [user_id, Zipfian.new(all_friends.size, ENV['COEFF_FRIEND_ACTIVITY'].to_f)] }]
 end
 generate_users
 
 def publish
   loop do
     Promiscuous.context(:bench) do
-      user_id, all_friends = @users.to_a.sample
-      friends = all_friends.sample(@publish_zipf[user_id].sample)
+      user_id, all_friends = $users.to_a.sample
+      friends = all_friends.sample($publish_zipf[user_id].sample)
 
       post_id, friends_post_ids = $master.pipelined do
         $master.incr("pub:#{user_id}:latest_post_id")
