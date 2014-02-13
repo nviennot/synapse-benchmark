@@ -53,7 +53,7 @@ def generate_users
   end
 
   @users = friends
-  @publish_zipf = Hash[friends.map { |user_id, all_friends| [user_id, Zipfian.new(all_friends.size, ENV['COEFF_FRIEND_ACTIVITY'].to_f)] }]
+  @publish_zipf = Hash[friends.map { |user_id, all_friends| [user_id, Zipfian.new([all_friends.size, 1].max, ENV['COEFF_FRIEND_ACTIVITY'].to_f)] }]
 end
 generate_users
 
