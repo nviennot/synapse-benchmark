@@ -190,7 +190,7 @@ begin
   # update_hosts
   update_app
   # benchmark_all
-  benchmark_once(3, 10)
+  benchmark_once(10, 10)
 
   # ENV['MAX_NUM_FRIENDS'] = 100.to_s
   # ENV['COEFF_NUM_FRIENDS'] = 0.8.to_s
