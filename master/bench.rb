@@ -22,15 +22,15 @@ end
 def update_app
   run <<-SCRIPT, "app git pull"
     cd /srv/stream-analyzer/playback_pub
-    # git pull
+    git pull
     # git reset --hard origin/master
-    unset BUNDLE_GEMFILE
-    unset RVM_ENV
-    unset BUNDLE_BIN_PATH
-    unset RUBYOPT
-    rvm ruby-2.0@stream-analyzer do bundle install
-    cd /srv/stream-analyzer/playback_sub
-    rvm ruby-2.0@stream-analyzer do bundle install
+    # unset BUNDLE_GEMFILE
+    # unset RVM_ENV
+    # unset BUNDLE_BIN_PATH
+    # unset RUBYOPT
+    # rvm ruby-2.0@stream-analyzer do bundle install
+    # cd /srv/stream-analyzer/playback_sub
+    # rvm ruby-2.0@stream-analyzer do bundle install
   SCRIPT
 end
 
@@ -204,7 +204,7 @@ begin
   kill_all
   @master = Redis.new(:url => 'redis://master/')
   # update_hosts
-  # update_app
+  update_app
   # benchmark_all
   benchmark_once(30000, 50)
 
