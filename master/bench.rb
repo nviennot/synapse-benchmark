@@ -22,9 +22,10 @@ def update_app
   run <<-SCRIPT, "app git pull"
     cd /srv/stream-analyzer/playback_pub
     git pull
+    git reset --hard origin/master
     unset BUNDLE_GEMFILE
-    rm -rf /usr/local/rvm/gems/ruby-2.0.0-p353@stream-analyzer/cache
-    rm -rf /usr/local/rvm/gems/ruby-2.0.0-p353@stream-analyzer/cache
+    # echo "yes" | rvm gemset delete ruby-2.0@stream-analyzer
+    # rvm use ruby-2.0 do rvm gemset create stream-analyzer
     rvm ruby-2.0@stream-analyzer do bundle install
   SCRIPT
 end
