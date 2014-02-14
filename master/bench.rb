@@ -118,29 +118,35 @@ def _rate_sample
   return avg_rate
 end
 
-def rate_sample_workers(options={})
-  unless @worker_rates
-    @worker_rates = {}
-    options[:num_workers].times.each { |i| @worker_rates[i] = [] }
+def rate_sample_workers(worker_rates, options={})
+  if worker_rates.empty?
+    options[:num_workers].times.each { |i| worker_rates[i] = [] }
   end
 
-  rates = @master.mget(options[:num_workers].times.map { |i| "sub_msg:#{i}" })
-  rates.each_with_index { |r, i| @worker_rates[i] << r.to_i }
+  rates = @master.mget(options[:num_workers].times.map { |i| "#{options[:name]}_msg:#{i}" })
+  rates.each_with_index { |r, i| worker_rates[i] << r.to_i }
 
-  @worker_rates.each do |i, worker_rate|
+  worker_rates.each do |i, worker_rate|
     normalized_rates = []
     last_rate = 0
     worker_rate.each { |r| normalized_rates << r - last_rate; last_rate = r }
-    puts "worker #{i}: #{normalized_rates}"
+    puts "#{options[:name]} worker #{i}: #{normalized_rates}"
   end
 end
 
 def rate_sample(jobs, options={})
   @last_time_read = nil
   @rates = []
+
+  sub_worker_rates = {}
+  pub_worker_rates = {}
+
   loop do
     sleep 1
-    rate_sample_workers(options)
+
+    rate_sample_workers(pub_worker_rates, options.merge(:name => 'pub'))
+    rate_sample_workers(sub_worker_rates, options.merge(:name => 'sub'))
+
     jobs.check_for_failures
     rate = _rate_sample
     return rate if rate
@@ -191,14 +197,14 @@ begin
   update_app
 
   options = {
-    :num_users => 3000,
-    :num_workers => 50,
-    :num_pub_redis => 10,
-    :num_sub_redis => 10,
+    :num_users => 2,
+    :num_workers => 1,
+    :num_pub_redis => 1,
+    :num_sub_redis => 1,
 
     :cleanup_interval => 10,
     :queue_max_age => 50,
-    :hash_size => 1000,
+    :hash_size => 0,
     :prefetch => 100,
 
     :max_num_friends => 500,

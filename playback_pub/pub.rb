@@ -118,7 +118,9 @@ def create_comment(user_id)
   post = Post.new(:id => post_id, :user_id => friend_id)
   post.read
 
-  comment = Comment.new(:id => "#{post_id}_#{rand(1..2**4)}")
+  comment = Comment.new(:id => "#{post_id}_#{rand(1..2**4)}",
+                        :user_id => friend_id,
+                        :post_id => post_id)
   comment.save
 end
 
