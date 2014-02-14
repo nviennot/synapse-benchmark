@@ -127,7 +127,7 @@ def create_comment(user_id)
   comment.save
 end
 
-def publish
+def publish_good
   loop do
     Promiscuous.context(:bench) do
       user_id = @users.keys.sample
@@ -136,6 +136,15 @@ def publish
       else
         create_comment(user_id)
       end
+    end
+  end
+end
+
+def publish
+  loop do
+    Promiscuous.context(:bench) do
+      post = Post.new(:id => Random.rand(0..100000))
+      post.save
     end
   end
 end
