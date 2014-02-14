@@ -19,6 +19,14 @@ class Promiscuous::Subscriber::Worker::MessageSynchronizer
   QUEUE_MAX_AGE    = ENV['QUEUE_MAX_AGE'].to_i
 end
 
+
+module Promiscuous::Redis
+  def self.new_connection(url=nil)
+    url ||= Promiscuous::Config.redis_urls
+    ::Redis::Distributed.new(url, :timeout => 20, :tcp_keepalive => 60)
+  end
+end
+
 Promiscuous.configure do |config|
   config.app = 'playback_sub'
   config.amqp_url = "amqp://guest:guest@#{amqp_ip}:5672"

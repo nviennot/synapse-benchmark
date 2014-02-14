@@ -64,17 +64,6 @@ def run_benchmark(options={})
   kill_all
   @master.flushdb
 
-  options[:max_num_friends] = 500
-  options[:coeff_num_friends] = 0.8
-
-  options[:num_pub_redis] = 3
-  options[:num_sub_redis] = 3
-
-  options[:cleanup_interval] = 10
-  options[:queue_max_age] = 50
-  options[:hash_size] = 1000
-  options[:prefetch] = 100
-
   @abricot.multi do
     clean_rabbitmq
     register_redis_ips
@@ -158,17 +147,16 @@ def rate_sample(jobs, options={})
   end
 end
 
-def benchmark_once(num_users, num_workers)
+def benchmark_once(options={})
   tries = 3
 
   begin
     tries -= 1
-    options = {:num_users => num_users, :num_workers => num_workers}
     jobs = run_benchmark(options)
     rate = rate_sample(jobs, options).round(1)
     jobs.kill
 
-    result = "#{num_users} #{num_workers} #{rate}"
+    result = "#{options[:num_users]} #{options[:num_workers]} #{rate}"
 
     STDERR.puts ">>>>>> \e[1;36m #{result}\e[0m"
     File.open("results", "a") do |f|
@@ -201,7 +189,23 @@ begin
   @master = Redis.new(:url => 'redis://master/')
   # benchmark_all
   update_app
-  # benchmark_once(300, 1)
+
+  options = {
+    :num_users => 3000,
+    :num_workers => 50,
+    :num_pub_redis => 10,
+    :num_sub_redis => 10,
+
+    :cleanup_interval => 10,
+    :queue_max_age => 50,
+    :hash_size => 1000,
+    :prefetch => 100,
+
+    :max_num_friends => 500,
+    :coeff_num_friends => 0.8,
+  }
+
+  benchmark_once(options)
 rescue Exception => e
   STDERR.puts "-" * 80
   STDERR.puts e.message

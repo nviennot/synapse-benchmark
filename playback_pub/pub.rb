@@ -18,6 +18,13 @@ Promiscuous.configure do |config|
                         .map { |r| "redis://#{r}/" }
 end
 
+module Promiscuous::Redis
+  def self.new_connection(url=nil)
+    url ||= Promiscuous::Config.redis_urls
+    ::Redis::Distributed.new(url, :timeout => 20, :tcp_keepalive => 60)
+  end
+end
+
 Promiscuous::Config.logger.level = 1
 
 class Promiscuous::Publisher::Operation::Ephemeral
