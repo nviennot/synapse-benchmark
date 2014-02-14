@@ -41,17 +41,30 @@ end
 
 Promiscuous::Config.logger.level = 1
 
+$process_msg = lambda do
+  $master.pipelined do
+    $master.incr("sub_msg")
+    $master.incr("sub_msg:#{$worker_index}")
+  end
+  sleep ENV['SUB_LATENCY'].to_f if ENV['SUB_LATENCY']
+end
+
+class User
+  include Promiscuous::Subscriber::Model::Observer
+  subscribe
+  after_create { $process_msg.call }
+end
+
 class Post
   include Promiscuous::Subscriber::Model::Observer
   subscribe
+  after_create { $process_msg.call }
+end
 
-  after_create do
-    $master.pipelined do
-      $master.incr("sub_msg")
-      $master.incr("sub_msg:#{$worker_index}")
-    end
-    sleep ENV['SUB_LATENCY'].to_f if ENV['SUB_LATENCY']
-  end
+class Comment
+  include Promiscuous::Subscriber::Model::Observer
+  subscribe
+  after_create { $process_msg.call }
 end
 
 Promiscuous::Subscriber::Worker.new.start
