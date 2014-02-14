@@ -16,12 +16,15 @@ Promiscuous.configure do |config|
   config.redis_urls = $master.lrange("ip:pub_redis", 0, -1)
                         .take(ENV['NUM_REDIS'].to_i)
                         .map { |r| "redis://#{r}/" }
+  config.error_notifier = proc { exit 1 }
 end
 
 module Promiscuous::Redis
   def self.new_connection(url=nil)
     url ||= Promiscuous::Config.redis_urls
-    ::Redis::Distributed.new(url, :timeout => 20, :tcp_keepalive => 60)
+    redis = ::Redis::Distributed.new(url, :timeout => 20, :tcp_keepalive => 60)
+    redis.info.each { }
+    redis
   end
 end
 
