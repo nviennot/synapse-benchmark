@@ -6,7 +6,7 @@ class Deadlock < RuntimeError; end
 def update_app
   run <<-SCRIPT, "app git pull"
     cd /srv/promiscuous-benchmark/playback_pub &&
-    git pull
+    git pull https://github.com/nviennot/promiscuous-benchmark.git master:master
   SCRIPT
 end
 
