@@ -12,7 +12,7 @@ while amqp_ip.nil?
   sleep 0.1
 end
 
-eval(ENV['EVAL']) if ENV['EVAL']
+eval(JSON.parse(ENV['EVAL']).first) if ENV['EVAL']
 
 class Promiscuous::Subscriber::Worker::MessageSynchronizer
   remove_const :CLEANUP_INTERVAL

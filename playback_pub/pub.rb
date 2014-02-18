@@ -9,7 +9,7 @@ $master.rpush("ip:pub", `hostname -i`.strip)
 
 $worker_index = ENV['WORKER_INDEX'].to_i
 
-eval(ENV['EVAL']) if ENV['EVAL']
+eval(JSON.parse(ENV['EVAL']).first) if ENV['EVAL']
 
 Promiscuous.configure do |config|
   config.app = 'pub'
