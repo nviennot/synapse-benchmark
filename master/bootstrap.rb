@@ -9,21 +9,21 @@ def update_hosts
 end
 
 def update_app
-  run <<-SCRIPT, "Updating application"
-    cd /srv/promiscuous-benchmark
-    git pull
-    git reset --hard origin/master
-    unset BUNDLE_GEMFILE
-    unset RVM_ENV
-    unset BUNDLE_BIN_PATH
-    unset RUBYOPT
-    cd /srv/promiscuous-benchmark/playback_pub
-    rvm ruby-2.0@promiscuous-benchmark do bundle install
-    cd /srv/promiscuous-benchmark/playback_sub
+  run <<-SCRIPT, "Updating application", :tag => :sub
+    cd /srv/promiscuous-benchmark &&
+    git fetch origin &&
+    git reset --hard origin/master &&
+    unset BUNDLE_GEMFILE &&
+    unset RVM_ENV &&
+    unset BUNDLE_BIN_PATH &&
+    unset RUBYOPT &&
+    cd /srv/promiscuous-benchmark/playback_pub &&
+    rvm ruby-2.0@promiscuous-benchmark do bundle install &&
+    cd /srv/promiscuous-benchmark/playback_sub &&
     rvm ruby-2.0@promiscuous-benchmark do bundle install
   SCRIPT
 end
 
-kill_all
-update_hosts
+# kill_all
+# update_hosts
 update_app

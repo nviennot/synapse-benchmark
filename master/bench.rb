@@ -197,14 +197,14 @@ begin
   update_app
 
   options = {
-    :num_users => 5000,
-    :num_workers => 1,
-    :num_pub_redis => 1,
-    :num_sub_redis => 1,
+    :num_users => 10000,
+    :num_workers => 50,
+    :num_pub_redis => 5,
+    :num_sub_redis => 5,
 
-    :cleanup_interval => 2,
-    :queue_max_age => 2,
-    :hash_size => 1,
+    :cleanup_interval => 10,
+    :queue_max_age => 50,
+    :hash_size => 0,
     :prefetch => 100,
 
     :max_num_friends => 500,

@@ -1,9 +1,13 @@
 #!/bin/bash
-NUM=$1
-ROLE=$2
+ZONE=$1
+NUM=$2
+ROLE=$3
+NONCE=$4
+
+FILE=/tmp/ec2/${1}_${2}_${3}_${4}
 
 source aws_keys
 
 mkdir -p /tmp/ec2/
-ec2-run-instances ami-b16266d8 -t c3.large -z us-east-1a -g promiscuous-sg -n $NUM | tee /tmp/ec2/$ROLE
-ec2-create-tags `cat /tmp/ec2/$ROLE | grep '^INSTANCE' | awk '{print $2}'` -t Role=$ROLE
+ec2-run-instances ami-b16266d8 -t c3.large -z us-east-1$1 -g promiscuous-sg -n $NUM | tee $FILE &&
+ec2-create-tags `cat $FILE | grep '^INSTANCE' | awk '{print $2}'` -t Role=$ROLE
