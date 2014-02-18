@@ -158,6 +158,12 @@ end
 def benchmark_once(options={})
   tries = 3
 
+  options = options.dup
+  if options[:num_redis]
+    options[:num_sub_redis] = options[:num_redis]
+    options[:num_pub_redis] = options[:num_redis]
+  end
+
   begin
     tries -= 1
     jobs = run_benchmark(options)
