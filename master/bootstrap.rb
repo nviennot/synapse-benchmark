@@ -2,17 +2,18 @@
 require './boot'
 
 def update_hosts
+  ip="10.179.139.38"
   run <<-SCRIPT, "Updating /etc/hosts"
-    HOST=`/root/get_abricot_redis`
-    sed -i "s/^.* master$/$HOST master/" /etc/hosts
+    # HOST=`/root/get_abricot_redis`
+    sed -i "s/^.* master$/#{ip} master/" /etc/hosts
   SCRIPT
 end
 
 def update_app
   run <<-SCRIPT, "Updating application"
     cd /srv/promiscuous-benchmark &&
-    git fetch origin &&
-    git reset --hard origin/master &&
+    git fetch https://github.com/nviennot/promiscuous-benchmark.git
+    git reset --hard FETCH_HEAD
     unset BUNDLE_GEMFILE &&
     unset RVM_ENV &&
     unset BUNDLE_BIN_PATH &&
