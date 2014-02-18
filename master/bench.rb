@@ -100,7 +100,7 @@ class Rate
     @key = key
     @rates = []
 
-    @num_samples = 6000
+    @num_samples = 60
     @num_dropped = @num_samples / 3
   end
 
@@ -138,7 +138,7 @@ def rate_sample(jobs, options={})
   # sub_workers_rate = options[:num_workers].times.map { |i| Rate.new(@master, "sub_msg:#{i}") }
 
   loop do
-    sleep 5
+    sleep 1
 
     jobs.check_for_failures
 
@@ -180,16 +180,25 @@ def benchmark_once(options={})
   end
 end
 
-def benchmark_all
-  num_workers = [1,3,5,10,30,50]
-  num_users = [3, 30]
-  # num_users = [1, 10, 100, 1000]
+def _benchmark(options={})
+  key, values = options.select { |k,v| v.is_a?(Array) }.first
+  if values
+    values.each { |v| _benchmark(options.merge(key => v)) }
+  else
+    benchmark_once(options)
+  end
+end
 
-  num_users.each do |nu|
-    num_workers.each do |nw|
-      benchmark_once(nu, nw)
+def benchmark(options={})
+  File.open("results", "a") do |f|
+    f.puts ""
+    f.puts "#" + "-" * 80
+    options.each do |k,v|
+      f.puts "# :#{k} => #{v}"
     end
   end
+
+  _benchmark(options)
 end
 
 begin
@@ -199,14 +208,14 @@ begin
   # update_app
 
   options = {
-    :pub_latency => "0.002",
-    :num_users => 1000,
-    :num_workers => 64,
+    #:pub_latency => "0.002",
+    :num_users => [100, 1000, 10000],
+    :num_workers => [1,3,10, 30, 64],
     :num_pub_redis => 10,
     :num_sub_redis => 10,
 
     :cleanup_interval => 10,
-    :queue_max_age => 100,
+    :queue_max_age => 50,
     :hash_size => 0,
     :prefetch => 100,
 
@@ -214,10 +223,11 @@ begin
     :coeff_num_friends => 0.8,
   }
 
-  benchmark_once(options)
+  benchmark(options)
 rescue Exception => e
   STDERR.puts "-" * 80
   STDERR.puts e.message
+  STDERR.puts e.backtrace.join("\n")
   STDERR.puts
   STDERR.puts
 end

@@ -6,7 +6,7 @@ set output "throughput-vs-worker.pdf"
 #set format y "%.0e"
 set ylabel "Throughput [msg/s]" font "Times-Roman,14"
 #set ylabel offset +1.2,0
-set yrange [100:6000]
+set yrange [100:10000]
 
 set xlabel "Number of Workers" font "Times-Roman,14"
 #set xlabel offset 0,+1
@@ -16,7 +16,8 @@ set ytics font "Times-Roman,14"
 
 set logscale xy
 
-set ytics (100, 200,300,400,600,800,1000,1500,2000,3000,4000,5000)
+set ytics (100,200,300,400,600,800,1000,2000,3000,4000,6000,8000,10000)
+set xtics (1,3,10,30,64)
 set grid ytics
 # set ytics 250 font "Times-Roman,14"
 
@@ -32,7 +33,6 @@ set key reverse top left font "Times-Roman,14"
 
 set datafile missing
 
-plot 'throughput-vs-workers.dat' using 1:5 title "3000 users" with linespoint lt 1 ps 1 lw 3 lc 1 pt 1, \
-     ''                          using 1:4 title "300 users"  with linespoint lt 1 ps 1 lw 3 lc 3 pt 6, \
-     ''                          using 1:3 title "30 users"   with linespoint lt 1 ps 1 lw 3 lc 4 pt 2, \
-     ''                          using 1:2 title "3 users"    with linespoint lt 1 ps 1 lw 3 lc 2 pt 4, \
+plot 'throughput-vs-workers.dat' using 1:4 title "10000 users" with linespoint lt 1 ps 1 lw 3 lc 1 pt 1, \
+     ''                          using 1:3 title "1000 users"  with linespoint lt 1 ps 1 lw 3 lc 3 pt 6, \
+     ''                          using 1:2 title "100 users"   with linespoint lt 1 ps 1 lw 3 lc 4 pt 2

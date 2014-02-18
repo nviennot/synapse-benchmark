@@ -3,6 +3,7 @@
 r = {}
 
 File.open('results').each do |line|
+  next if line =~ / *#/
   items = line.chomp.gsub(/[\t ]+/, ' ').split(' ')
   if items.size == 3
     users = items[0]
