@@ -90,66 +90,65 @@ def run_benchmark(options={})
   jobs
 end
 
+class Rate
+  attr_accessor :key
+  def initialize(master, key)
+    @master = master
+    @key = key
+    @rates = []
 
-def _rate_sample
-  num_samples = 40 # must be divisible by 4
-  num_dropped = num_samples / 4
-
-  num_msg_since_last = @master.getset('sub_msg', 0).to_i
-  new_time, @last_time_read = @last_time_read, Time.now
-  return unless new_time
-
-  delta = @last_time_read - new_time
-  rate = num_msg_since_last / delta
-
-
-  if @rates.size >= 5 && @rates[-5..-1].all? { |r| r.zero? }
-    raise Deadlock
+    @num_samples = 6000
+    @num_dropped = @num_samples / 3
   end
 
-  @rates << rate
-  STDERR.puts "Sampling: #{rate.round(1)}q/s #{@rates.size}/#{num_samples}"
-  return unless @rates.size == num_samples
+  def sample
+    num_msg_since_last = @master.getset(@key, 0).to_i
+    new_time, @last_time_read = @last_time_read, Time.now
+    return unless new_time
 
-  sampled_rates = @rates.sort_by { |x| -x }.to_a[num_dropped/2 ... -num_dropped/2]
-  avg_rate = sampled_rates.reduce(:+) / sampled_rates.size.to_f
+    delta = @last_time_read - new_time
+    rate = num_msg_since_last / delta
 
-  STDERR.puts "Sampling avg rate: #{avg_rate}"
-  return avg_rate
-end
+    if @rates.size >= 5 && @rates[-5..-1].all? { |r| r.zero? }
+      raise Deadlock
+    end
 
-def rate_sample_workers(worker_rates, options={})
-  if worker_rates.empty?
-    options[:num_workers].times.each { |i| worker_rates[i] = [] }
+    @rates << rate
+    STDERR.puts "Sampling of #{@key}: #{rate.round(1)}q/s #{@rates.size}/#{@num_samples}"
   end
 
-  rates = @master.mget(options[:num_workers].times.map { |i| "#{options[:name]}_msg:#{i}" })
-  rates.each_with_index { |r, i| worker_rates[i] << r.to_i }
+  def rate
+    return unless @rates.size == @num_samples
 
-  worker_rates.each do |i, worker_rate|
-    normalized_rates = []
-    last_rate = 0
-    worker_rate.each { |r| normalized_rates << r - last_rate; last_rate = r }
-    puts "#{options[:name]} worker #{i}: #{normalized_rates}"
+    sampled_rates = @rates.sort_by { |x| -x }.to_a[@num_dropped/2 ... -@num_dropped/2]
+    avg_rate = sampled_rates.reduce(:+) / sampled_rates.size.to_f
+
+    STDERR.puts "Sampling avg rate of #{@key}: #{avg_rate}"
+    return avg_rate
   end
 end
 
 def rate_sample(jobs, options={})
-  @last_time_read = nil
-  @rates = []
+  sub_rate = Rate.new(@master, 'sub_msg')
+  pub_rate = Rate.new(@master, 'pub_msg')
 
-  sub_worker_rates = {}
-  pub_worker_rates = {}
+  # sub_workers_rate = options[:num_workers].times.map { |i| Rate.new(@master, "sub_msg:#{i}") }
 
   loop do
-    sleep 1
-
-    rate_sample_workers(pub_worker_rates, options.merge(:name => 'pub'))
-    rate_sample_workers(sub_worker_rates, options.merge(:name => 'sub'))
+    sleep 5
 
     jobs.check_for_failures
-    rate = _rate_sample
-    return rate if rate
+
+    puts
+    pub_rate.sample
+    sub_rate.sample
+
+    # sub_workers_rate.each(&:sample)
+
+    pr = pr = pub_rate.rate
+    sr = sr = sub_rate.rate
+
+    return sr if sr
   end
 end
 
@@ -194,16 +193,17 @@ begin
   kill_all
   @master = Redis.new(:url => 'redis://master/')
   # benchmark_all
-  update_app
+  # update_app
 
   options = {
-    :num_users => 10000,
-    :num_workers => 50,
-    :num_pub_redis => 5,
-    :num_sub_redis => 5,
+    :pub_latency => "0.002",
+    :num_users => 1000,
+    :num_workers => 64,
+    :num_pub_redis => 10,
+    :num_sub_redis => 10,
 
     :cleanup_interval => 10,
-    :queue_max_age => 50,
+    :queue_max_age => 100,
     :hash_size => 0,
     :prefetch => 100,
 
@@ -215,4 +215,6 @@ begin
 rescue Exception => e
   STDERR.puts "-" * 80
   STDERR.puts e.message
+  STDERR.puts
+  STDERR.puts
 end

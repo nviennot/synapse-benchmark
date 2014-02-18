@@ -10,7 +10,7 @@ $master.rpush("ip:pub", `hostname -i`.strip)
 $worker_index = ENV['WORKER_INDEX'].to_i
 
 Promiscuous.configure do |config|
-  config.app = 'playback_pub'
+  config.app = 'pub'
   config.amqp_url = 'amqp://guest:guest@localhost:5672'
   config.hash_size = ENV['HASH_SIZE'].to_i
   config.redis_urls = $master.lrange("ip:pub_redis", 0, -1)
@@ -28,7 +28,7 @@ module Promiscuous::Redis
   end
 end
 
-Promiscuous::Config.logger.level = 1
+Promiscuous::Config.logger.level = ENV['LOGGER_LEVEL'].to_i
 
 class Promiscuous::Publisher::Operation::Ephemeral
   def execute

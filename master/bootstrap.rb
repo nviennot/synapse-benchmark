@@ -9,7 +9,7 @@ def update_hosts
 end
 
 def update_app
-  run <<-SCRIPT, "Updating application", :tag => :sub
+  run <<-SCRIPT, "Updating application"
     cd /srv/promiscuous-benchmark &&
     git fetch origin &&
     git reset --hard origin/master &&
@@ -25,5 +25,5 @@ def update_app
 end
 
 # kill_all
-# update_hosts
+update_hosts
 update_app

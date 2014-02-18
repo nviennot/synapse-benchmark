@@ -29,7 +29,7 @@ module Promiscuous::Redis
 end
 
 Promiscuous.configure do |config|
-  config.app = 'playback_sub'
+  config.app = 'sub'
   config.amqp_url = "amqp://guest:guest@#{amqp_ip}:5672"
   config.prefetch = ENV['PREFETCH'].to_i
   config.subscriber_threads = 1
@@ -39,7 +39,7 @@ Promiscuous.configure do |config|
   config.error_notifier = proc { exit 1 }
 end
 
-Promiscuous::Config.logger.level = 1
+Promiscuous::Config.logger.level = ENV['LOGGER_LEVEL'].to_i
 
 $process_msg = lambda do
   $master.pipelined do
