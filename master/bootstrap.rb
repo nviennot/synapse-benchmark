@@ -2,10 +2,10 @@
 require './boot'
 
 def update_hosts
-  ip="10.179.139.38"
   run <<-SCRIPT, "Updating /etc/hosts"
     # HOST=`/root/get_abricot_redis`
-    sed -i "s/^.* master$/#{ip} master/" /etc/hosts
+    HOST=#{ENV['MASTER_IP']}
+    sed -i "s/^.* master$/$HOST master/" /etc/hosts
   SCRIPT
 end
 

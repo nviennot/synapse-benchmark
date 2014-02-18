@@ -211,18 +211,17 @@ begin
   kill_all
   @master = Redis.new(:url => 'redis://master/')
   # benchmark_all
-  # update_app
+  update_app
 
   options = {
     #:pub_latency => "0.002",
-    :num_users => [100, 1000, 10000],
-    :num_workers => [1,3,10, 30, 64],
-    :num_pub_redis => 10,
-    :num_sub_redis => 10,
+    :num_users => 2,
+    :num_workers => 2,
+    :num_redis => 2,
 
     :cleanup_interval => 10,
     :queue_max_age => 50,
-    :hash_size => 0,
+    :hash_size => 2,
     :prefetch => 100,
 
     :max_num_friends => 500,

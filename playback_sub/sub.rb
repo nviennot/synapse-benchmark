@@ -69,6 +69,7 @@ class Comment
 end
 
 Promiscuous::Subscriber::Worker.new.start
+sleep 3
 $master.rpush("ip:sub", `hostname -i`.strip)
 
 sleep 100000
