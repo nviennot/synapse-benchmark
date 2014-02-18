@@ -33,6 +33,7 @@ Promiscuous.configure do |config|
   config.amqp_url = "amqp://guest:guest@#{amqp_ip}:5672"
   config.prefetch = ENV['PREFETCH'].to_i
   config.subscriber_threads = 1
+  config.hash_size = ENV['HASH_SIZE'].to_i
   config.redis_urls = $master.lrange("ip:sub_redis", 0, -1)
                         .take(ENV['NUM_REDIS'].to_i)
                         .map { |r| "redis://#{r}/" }

@@ -39,6 +39,7 @@ def run_publisher(options={})
     export COEFF_NUM_FRIENDS=#{options[:coeff_num_friends]}
     export NUM_USERS=#{options[:num_users]}
     export HASH_SIZE=#{options[:hash_size]}
+    export LOGGER_LEVEL=1
 
     #{"export NUM_REDIS=#{options[:num_pub_redis]}" if options[:num_pub_redis]}
     #{"export PUB_LATENCY=#{options[:pub_latency]}" if options[:pub_latency]}
@@ -53,6 +54,8 @@ def run_subscriber(options={})
     export CLEANUP_INTERVAL=#{options[:cleanup_interval]}
     export QUEUE_MAX_AGE=#{options[:queue_max_age]}
     export PREFETCH=#{options[:prefetch]}
+    export HASH_SIZE=#{options[:hash_size]}
+    export LOGGER_LEVEL=1
 
     #{"export NUM_REDIS=#{options[:num_sub_redis]}" if options[:num_sub_redis]}
     #{"export SUB_LATENCY=#{options[:sub_latency]}" if options[:sub_latency]}
