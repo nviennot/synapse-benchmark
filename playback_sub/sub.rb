@@ -12,6 +12,8 @@ while amqp_ip.nil?
   sleep 0.1
 end
 
+eval(ENV['EVAL']) if ENV['EVAL']
+
 class Promiscuous::Subscriber::Worker::MessageSynchronizer
   remove_const :CLEANUP_INTERVAL
   CLEANUP_INTERVAL = ENV['CLEANUP_INTERVAL'].to_i
@@ -69,7 +71,6 @@ class Comment
 end
 
 Promiscuous::Subscriber::Worker.new.start
-sleep 3
 $master.rpush("ip:sub", `hostname -i`.strip)
 
 sleep 100000

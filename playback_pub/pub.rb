@@ -9,6 +9,8 @@ $master.rpush("ip:pub", `hostname -i`.strip)
 
 $worker_index = ENV['WORKER_INDEX'].to_i
 
+eval(ENV['EVAL']) if ENV['EVAL']
+
 Promiscuous.configure do |config|
   config.app = 'pub'
   config.amqp_url = 'amqp://guest:guest@localhost:5672'
