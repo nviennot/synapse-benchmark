@@ -32,12 +32,18 @@ end
 
 Promiscuous::Config.logger.level = ENV['LOGGER_LEVEL'].to_i
 
+$msg_count = 0
 class Promiscuous::Publisher::Operation::Ephemeral
   def execute
     super do
-      $master.pipelined do
-        $master.incr("pub_msg")
-        $master.incr("pub_msg:#{$worker_index}")
+      $msg_count += 1
+      incr_by = 10
+
+      if $msg_count % incr_by == 0
+        $master.pipelined do
+          $master.incrby("pub_msg", incr_by)
+          $master.incrby("pub_msg:#{$worker_index}", incr_by)
+        end
       end
 
       sleep ENV['PUB_LATENCY'].to_f if ENV['PUB_LATENCY']
@@ -84,6 +90,10 @@ end
 
 class User
   include Promiscuous::Publisher::Model::Ephemeral
+
+  def node
+    Promiscuous::Dependency.new(id, "latest_post_id").redis_node
+  end
 end
 
 class Post
@@ -102,7 +112,8 @@ def create_post(user_id)
   current_user = User.new(:id => user_id)
   current_user.read
 
-  pid = $master.incr("pub:#{user_id}:latest_post_id")
+
+  pid = current_user.node.incr("pub:#{user_id}:latest_post_id")
   post_id = "#{user_id}_#{pid}"
   post = Post.new(:id => post_id, :user_id => user_id)
   post.save
@@ -118,7 +129,7 @@ def create_comment(user_id)
   current_user = User.new(:id => user_id)
   current_user.read
 
-  pid = $master.get("pub:#{friend_id}:latest_post_id").to_i
+  pid = friend.node.get("pub:#{friend_id}:latest_post_id").to_i
   post_id = "#{friend_id}_#{pid}"
   post = Post.new(:id => post_id, :user_id => friend_id)
   post.read

@@ -44,10 +44,17 @@ end
 
 Promiscuous::Config.logger.level = ENV['LOGGER_LEVEL'].to_i
 
+$msg_count = 0
+
 $process_msg = lambda do
-  $master.pipelined do
-    $master.incr("sub_msg")
-    $master.incr("sub_msg:#{$worker_index}")
+  $msg_count += 1
+  incr_by = 10
+
+  if $msg_count % incr_by == 0
+    $master.pipelined do
+      $master.incrby("sub_msg", incr_by)
+      $master.incrby("sub_msg:#{$worker_index}", incr_by)
+    end
   end
   sleep ENV['SUB_LATENCY'].to_f if ENV['SUB_LATENCY']
 end
