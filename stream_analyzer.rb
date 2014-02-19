@@ -157,7 +157,9 @@ class Operation
   attr_accessor :klass, :id, :operation, :dependencies, :user, :context
 
   def initialize(payload)
-    self.klass        = payload[:type] || payload[:types].last
+    self.klass   = payload[:type]
+    self.klass ||= payload[:types].last if payload[:types]
+    self.klass ||= payload[:operations].first[:types].last
     self.id           = payload[:id]
     self.operation    = payload[:operation] || payload[:operations].first[:operation]
     self.dependencies = payload[:dependencies]

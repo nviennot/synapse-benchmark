@@ -40,7 +40,7 @@ def run_publisher(options={})
     export NUM_USERS=#{options[:num_users]}
     export HASH_SIZE=#{options[:hash_size]}
     export LOGGER_LEVEL=1
-
+    #{"export EVAL='#{[options[:pub_eval]].to_json}'" if options[:pub_eval]}
     #{"export NUM_REDIS=#{options[:num_pub_redis]}" if options[:num_pub_redis]}
     #{"export PUB_LATENCY=#{options[:pub_latency]}" if options[:pub_latency]}
     #{ruby_exec "./pub.rb"}
@@ -56,7 +56,7 @@ def run_subscriber(options={})
     export PREFETCH=#{options[:prefetch]}
     export HASH_SIZE=#{options[:hash_size]}
     export LOGGER_LEVEL=1
-
+    #{"export EVAL='#{[options[:sub_eval]].to_json}'" if options[:sub_eval]}
     #{"export NUM_REDIS=#{options[:num_sub_redis]}" if options[:num_sub_redis]}
     #{"export SUB_LATENCY=#{options[:sub_latency]}" if options[:sub_latency]}
     #{ruby_exec "./sub.rb"}
