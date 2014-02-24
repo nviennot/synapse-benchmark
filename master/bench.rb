@@ -217,8 +217,7 @@ begin
   options = {
     #:pub_latency => "0.002",
     :num_users => 2000,
-    :num_workers => 50,
-    # :num_workers => 175,
+    :num_workers => 100,
     :num_redis => 10,
 
     :cleanup_interval => 10,
