@@ -56,6 +56,7 @@ def run_subscriber(options={})
     export PREFETCH=#{options[:prefetch]}
     export HASH_SIZE=#{options[:hash_size]}
     export LOGGER_LEVEL=1
+    export NUM_THREADS=1
     #{"export EVAL='#{[options[:sub_eval]].to_json}'" if options[:sub_eval]}
     #{"export NUM_REDIS=#{options[:num_sub_redis]}" if options[:num_sub_redis]}
     #{"export SUB_LATENCY=#{options[:sub_latency]}" if options[:sub_latency]}
