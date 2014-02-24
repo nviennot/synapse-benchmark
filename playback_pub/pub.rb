@@ -51,14 +51,6 @@ class Promiscuous::Publisher::Operation::Ephemeral
   end
 end
 
-module Promiscuous::Publisher::Model::Ephemeral
-  def read
-    op = Promiscuous::Publisher::Operation::NonPersistent
-      .new(:instances => [self], :operation => :read)
-    Promiscuous::Publisher::Context.current.read_operations << op
-  end
-end
-
 def generate_users
   friend_distribution = Zipfian.new(ENV['MAX_NUM_FRIENDS'].to_i, ENV['COEFF_NUM_FRIENDS'].to_f)
 

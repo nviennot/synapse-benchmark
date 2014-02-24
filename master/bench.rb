@@ -215,13 +215,14 @@ begin
 
   options = {
     #:pub_latency => "0.002",
-    :num_users => 2,
-    :num_workers => 2,
-    :num_redis => 2,
+    :num_users => 2000,
+    :num_workers => 50,
+    # :num_workers => 175,
+    :num_redis => 10,
 
     :cleanup_interval => 10,
     :queue_max_age => 50,
-    :hash_size => 2,
+    :hash_size => 0,
     :prefetch => 100,
 
     :max_num_friends => 500,
