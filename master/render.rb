@@ -1,28 +1,39 @@
 #!/usr/bin/env ruby
 
-r = {}
+rate = {}
+overhead = {}
 
-File.open('results').each do |line|
+File.open(ARGV[0] || 'results').each do |line|
   line = line.gsub(/#.*$/, '').gsub(/[\t ]+/, ' ').strip
   next if line.empty?
 
   items = line.chomp.gsub(/[\t ]+/, ' ').split(' ')
-  if items.size == 3
-    users = items[0]
-    workers = items[1]
-    rate = items[2]
+  users = items[0]
+  workers = items[1]
+  r = items[2]
+  o = items[3]
 
-    r[workers] ||= {}
-    r[workers][users] = rate
-  end
+  rate[workers] ||= {}
+  rate[workers][users] = r
+
+  overhead[workers] ||= {}
+  overhead[workers][users] = o
 end
 
-users = r.values.map(&:keys).flatten.uniq
+users = rate.values.map(&:keys).flatten.uniq
 
 File.open('throughput-vs-workers.dat', 'w') do |f|
-  r.each do |workers, ur|
+  rate.each do |workers, ur|
     f.puts([workers, *users.map { |u| ur[u] }].join(' '))
   end
 end
 
 `gnuplot throughput-vs-workers.plot`
+
+File.open('overhead-vs-workers.dat', 'w') do |f|
+  overhead.each do |workers, ur|
+    f.puts([workers, *users.map { |u| ur[u] }].join(' '))
+  end
+end
+
+`gnuplot overhead-vs-workers.plot`

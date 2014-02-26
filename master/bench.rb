@@ -43,7 +43,7 @@ def run_publisher(options={})
     #{"export EVAL='#{[options[:pub_eval]].to_json}'" if options[:pub_eval]}
     #{"export NUM_REDIS=#{options[:num_pub_redis]}" if options[:num_pub_redis]}
     #{"export PUB_LATENCY=#{options[:pub_latency]}" if options[:pub_latency]}
-    #{"export NUM_READ_DEPS=#{options[:num_read_deps]}" if options[:num_read_deps]}
+    #{"export NUM_READ_DEPS=#{options[:num_read_deps]-1}" if options[:num_read_deps]}
     #{ruby_exec(options[:num_read_deps] ? "./pub_dep.rb" : "./pub.rb")}
   SCRIPT
 end
@@ -128,7 +128,6 @@ module Stats
       clean_samples = @samples.sort_by { |x| -x }.to_a[drop_window/2 ... -drop_window/2]
       avg = clean_samples.reduce(:+) / clean_samples.size.to_f
 
-      STDERR.puts
       STDERR.puts "Average sampling of #{@key}: \e[1;36m#{avg.round(1)}\e[0m#{unit}"
       avg
     end
@@ -190,6 +189,7 @@ def measure_stats(jobs, options={})
     end
 
     if sub_rate.finished?
+      STDERR.puts "-" * 80
       return sub_rate.average, pub_overhead.average
     end
   end
@@ -226,9 +226,10 @@ def benchmark_once(variables, options={})
     File.open("results", "a") do |f|
       f.puts result
     end
-  rescue Deadlock
+  rescue Deadlock, Abricot::Master::JobFailure => e
     jobs.kill if jobs
-    STDERR.puts ">>>>>> \e[1;31m Deadlocked :(\e[0m"
+    STDERR.puts ">>>>>> \e[1;31m #{e.class} :(\e[0m"
+    STDERR.puts e
     if tries > 0
       STDERR.puts ">>>>>> \e[1;31m Retrying...\e[0m"
       retry
@@ -261,14 +262,14 @@ begin
   kill_all
   @master = Redis.new(:url => 'redis://master/')
   # benchmark_all
-  update_app
+  # update_app
 
   options = {
     :num_users => 1000,
-    :num_read_deps => [0,9,99,999],
+    :num_read_deps => [1,10,100,100],
     :num_workers => [1,2,5,10,20,50,100],
     :hash_size => 0,
-    :num_redis => 10,
+    :num_redis => 15,
     # :num_workers => 100,
 
     #:pub_latency => "0.002",
@@ -276,7 +277,6 @@ begin
     :cleanup_interval => 10,
     :queue_max_age => 50,
     :prefetch => 100,
-
 
     :max_num_friends => 500,
     :coeff_num_friends => 0.8,

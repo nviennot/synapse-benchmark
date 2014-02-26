@@ -1,3 +1,7 @@
 *.json
 *.png
 *.dot
+*.pdf
+*.dat
+results
+aws_keys
