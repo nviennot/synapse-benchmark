@@ -1,51 +1,14 @@
 #!/usr/bin/env ruby
-require 'bundler'
-require 'redis'
-Bundler.require
-
-$master = Redis.new(:url => 'redis://master/')
+load 'common.rb'
+bootstrap(:pub, 'localhost')
 
 $master.rpush("ip:pub", `hostname -i`.strip)
 
-$worker_index = ENV['WORKER_INDEX'].to_i
-
-eval(JSON.parse(ENV['EVAL']).first) if ENV['EVAL']
-
-Promiscuous.configure do |config|
-  config.app = 'pub'
-  config.amqp_url = 'amqp://guest:guest@localhost:5672'
-  config.hash_size = ENV['HASH_SIZE'].to_i
-  config.redis_urls = $master.lrange("ip:pub_redis", 0, -1)
-                        .take(ENV['NUM_REDIS'].to_i)
-                        .map { |r| "redis://#{r}/" }
-  config.error_notifier = proc { exit 1 }
-end
-
-module Promiscuous::Redis
-  def self.new_connection(url=nil)
-    url ||= Promiscuous::Config.redis_urls
-    redis = ::Redis::Distributed.new(url, :timeout => 20, :tcp_keepalive => 60)
-    redis.info.each { }
-    redis
-  end
-end
-
-Promiscuous::Config.logger.level = ENV['LOGGER_LEVEL'].to_i
-
-$msg_count = 0
+$msg_count_bench = Stats::Counter.new('pub_msg')
 class Promiscuous::Publisher::Operation::Ephemeral
   def execute
     super do
-      $msg_count += 1
-      incr_by = 10
-
-      if $msg_count % incr_by == 0
-        $master.pipelined do
-          $master.incrby("pub_msg", incr_by)
-          $master.incrby("pub_msg:#{$worker_index}", incr_by)
-        end
-      end
-
+      $msg_count_bench.inc
       sleep ENV['PUB_LATENCY'].to_f if ENV['PUB_LATENCY']
     end
   end
@@ -100,6 +63,8 @@ class Comment
   publish :post_id
 end
 
+$overhead_stat = Stats::Average.new('pub_overhead')
+
 def create_post(user_id)
   current_user = User.new(:id => user_id)
   current_user.read
@@ -108,7 +73,7 @@ def create_post(user_id)
   pid = current_user.node.incr("pub:#{user_id}:latest_post_id")
   post_id = "#{user_id}_#{pid}"
   post = Post.new(:id => post_id, :user_id => user_id)
-  post.save
+  $overhead_stat.measure { post.save }
 end
 
 def create_comment(user_id)
@@ -129,7 +94,7 @@ def create_comment(user_id)
   comment = Comment.new(:id => "#{post_id}_#{rand(1..2**4)}",
                         :user_id => friend_id,
                         :post_id => post_id)
-  comment.save
+  $overhead_stat.measure { comment.save }
 end
 
 def publish

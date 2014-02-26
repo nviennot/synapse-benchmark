@@ -65,6 +65,8 @@ def run_subscriber(options={})
 end
 
 def run_benchmark(options={})
+  STDERR.puts "Launching with #{options}"
+
   kill_all
   @master.flushdb
 
@@ -94,49 +96,82 @@ def run_benchmark(options={})
   jobs
 end
 
-class Rate
-  attr_accessor :key
-  def initialize(master, key)
-    @master = master
-    @key = key
-    @rates = []
-
-    @num_samples = 60
-    @num_dropped = @num_samples / 3
-  end
-
-  def sample
-    num_msg_since_last = @master.getset(@key, 0).to_i
-    new_time, @last_time_read = @last_time_read, Time.now
-    return unless new_time
-
-    delta = @last_time_read - new_time
-    rate = num_msg_since_last / delta
-
-    if @rates.size >= 5 && @rates[-5..-1].all? { |r| r.zero? }
-      raise Deadlock
+module Stats
+  class Base
+    attr_accessor :key, :samples
+    def initialize(master, key)
+      @master = master
+      @key = key
+      @samples = []
+      @num_samples = 60
     end
 
-    @rates << rate
-    STDERR.puts "Sampling of #{@key}: #{rate.round(1)}q/s #{@rates.size}/#{@num_samples}"
+    def sample
+      return if finished?
+      s = read_sample
+      return unless s
+      @samples << s
+      STDERR.puts "[#{@samples.size}/#{@num_samples}] Sampling of #{@key}: \e[1;37m#{s.round(1)}\e[0m#{unit}"
+    end
+
+    def finished?
+      @samples.size == @num_samples
+    end
+
+    def average
+      return unless finished?
+
+      # We remove 1/3 of the data
+      drop_window = @samples.size / 3
+
+      clean_samples = @samples.sort_by { |x| -x }.to_a[drop_window/2 ... -drop_window/2]
+      avg = clean_samples.reduce(:+) / clean_samples.size.to_f
+
+      STDERR.puts "Sampling avg rate of #{@key}: #{avg.round(1)}#{unit}"
+      avg
+    end
   end
 
-  def rate
-    return unless @rates.size == @num_samples
+  class Counter < Base
+    def read_sample
+      num_msg_since_last = @master.getset(@key, 0).to_i
+      new_time, @last_time_read = @last_time_read, Time.now
+      return unless new_time
 
-    sampled_rates = @rates.sort_by { |x| -x }.to_a[@num_dropped/2 ... -@num_dropped/2]
-    avg_rate = sampled_rates.reduce(:+) / sampled_rates.size.to_f
+      delta = @last_time_read - new_time
+      num_msg_since_last / delta
+    end
 
-    STDERR.puts "Sampling avg rate of #{@key}: #{avg_rate}"
-    return avg_rate
+    def unit
+      "msg/s"
+    end
+  end
+
+  class Average < Base
+    def read_sample
+      t, s = @master.multi do
+        @master.getset("#{@key}:total", 0)
+        @master.getset("#{@key}:samples", 0)
+      end
+
+      unless @sampled_once
+        @sampled_once = true
+        return
+      end
+
+      t.to_f / (s.to_f * 10)
+    end
+
+    def unit
+      "ms"
+    end
   end
 end
 
-def rate_sample(jobs, options={})
-  sub_rate = Rate.new(@master, 'sub_msg')
-  pub_rate = Rate.new(@master, 'pub_msg')
-
-  # sub_workers_rate = options[:num_workers].times.map { |i| Rate.new(@master, "sub_msg:#{i}") }
+def measure_stats(jobs, options={})
+  sub_rate = Stats::Counter.new(@master, 'sub_msg')
+  pub_rate = Stats::Counter.new(@master, 'pub_msg')
+  pub_overhead = Stats::Average.new(@master, 'pub_overhead')
 
   loop do
     sleep 1
@@ -144,20 +179,23 @@ def rate_sample(jobs, options={})
     jobs.check_for_failures
 
     puts
+    pub_overhead.sample
     pub_rate.sample
     sub_rate.sample
 
-    # sub_workers_rate.each(&:sample)
+    if sub_rate.samples.size >= 5 && sub_rate.samples[-5..-1].all? { |r| r.zero? }
+      raise Deadlock
+    end
 
-    pr = pr = pub_rate.rate
-    sr = sr = sub_rate.rate
-
-    return sr if sr
+    if sub_rate.finished?
+      return sub_rate.average, pub_overhead.average
+    end
   end
 end
 
-def benchmark_once(options={})
-  tries = 3
+def benchmark_once(variables, options={})
+  num_tries = 3
+  tries = num_tries
 
   options = options.dup
   if options[:num_redis]
@@ -166,12 +204,19 @@ def benchmark_once(options={})
   end
 
   begin
+    num_retries = num_tries - tries
+
     tries -= 1
     jobs = run_benchmark(options)
-    rate = rate_sample(jobs, options).round(1)
+    rate, pub_overhead = measure_stats(jobs, options).round(1)
+    puts
+    puts
     jobs.kill
 
-    result = "#{options[:num_users]} #{options[:num_workers]} #{rate}"
+    pub_overhead = pub_overhead
+
+    result = (variables.map { |v| options[v] } + [rate]).join(" ")
+    result += " # retried #{num_retries} time" if num_retries > 0
 
     STDERR.puts ">>>>>> \e[1;36m #{result}\e[0m"
     File.open("results", "a") do |f|
@@ -187,12 +232,12 @@ def benchmark_once(options={})
   end
 end
 
-def _benchmark(options={})
+def _benchmark(variables, options={})
   key, values = options.select { |k,v| v.is_a?(Array) }.first
   if values
-    values.each { |v| _benchmark(options.merge(key => v)) }
+    values.each { |v| _benchmark(variables + [key], options.merge(key => v)) }
   else
-    benchmark_once(options)
+    benchmark_once(variables, options)
   end
 end
 
@@ -205,7 +250,7 @@ def benchmark(options={})
     end
   end
 
-  _benchmark(options)
+  _benchmark([], options)
 end
 
 begin
@@ -215,14 +260,16 @@ begin
   # update_app
 
   options = {
-    #:pub_latency => "0.002",
-    :num_users => 2000,
-    :num_workers => 100,
-    :num_redis => 10,
+    :num_users => 1000,
+    :num_workers => 1,
+    :num_redis => 15,
+    # :num_workers => 100,
 
+    #:pub_latency => "0.002",
+    #:sub_latency => "0.002",
     :cleanup_interval => 10,
     :queue_max_age => 50,
-    :hash_size => 0,
+    :hash_size => 1,
     :prefetch => 100,
 
     :max_num_friends => 500,
