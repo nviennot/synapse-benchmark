@@ -43,7 +43,8 @@ def run_publisher(options={})
     #{"export EVAL='#{[options[:pub_eval]].to_json}'" if options[:pub_eval]}
     #{"export NUM_REDIS=#{options[:num_pub_redis]}" if options[:num_pub_redis]}
     #{"export PUB_LATENCY=#{options[:pub_latency]}" if options[:pub_latency]}
-    #{ruby_exec "./pub.rb"}
+    #{"export NUM_READ_DEPS=#{options[:num_read_deps]}" if options[:num_read_deps]}
+    #{ruby_exec(options[:num_read_deps] ? "./pub_dep.rb" : "./pub.rb")}
   SCRIPT
 end
 
@@ -271,6 +272,8 @@ begin
     :queue_max_age => 50,
     :hash_size => 1,
     :prefetch => 100,
+
+    # :num_read_deps => 10,
 
     :max_num_friends => 500,
     :coeff_num_friends => 0.8,

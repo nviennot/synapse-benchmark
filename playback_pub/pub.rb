@@ -1,18 +1,6 @@
 #!/usr/bin/env ruby
 load 'common.rb'
-bootstrap(:pub, 'localhost')
-
-$master.rpush("ip:pub", `hostname -i`.strip)
-
-$msg_count_bench = Stats::Counter.new('pub_msg')
-class Promiscuous::Publisher::Operation::Ephemeral
-  def execute
-    super do
-      $msg_count_bench.inc
-      sleep ENV['PUB_LATENCY'].to_f if ENV['PUB_LATENCY']
-    end
-  end
-end
+bootstrap(:pub)
 
 def generate_users
   friend_distribution = Zipfian.new(ENV['MAX_NUM_FRIENDS'].to_i, ENV['COEFF_NUM_FRIENDS'].to_f)
@@ -110,12 +98,5 @@ def publish
   end
 end
 
-def wait_for_start_signal
-  loop do
-    return if $master.get("start_pub")
-    sleep 0.1
-  end
-end
-wait_for_start_signal
-
+finalize_bootstrap(:pub)
 publish
