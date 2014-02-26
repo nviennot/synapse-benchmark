@@ -216,7 +216,7 @@ def benchmark_once(variables, options={})
 
     pub_overhead = pub_overhead
 
-    result = (variables.map { |v| options[v] } + [rate]).join(" ")
+    result = (variables.map { |v| options[v] } + [rate, pub_overhead]).join(" ")
     result += " # retried #{num_retries} time" if num_retries > 0
 
     STDERR.puts ">>>>>> \e[1;36m #{result}\e[0m"
@@ -262,18 +262,18 @@ begin
 
   options = {
     :num_users => 1000,
-    :num_workers => 1,
-    :num_redis => 15,
+    :num_workers => [1,2,5,10,20,50,100],
+    # :num_read_deps => [0,10,100,1000],
+    :hash_size => 0,
+    :num_redis => 10,
     # :num_workers => 100,
 
     #:pub_latency => "0.002",
     #:sub_latency => "0.002",
     :cleanup_interval => 10,
     :queue_max_age => 50,
-    :hash_size => 1,
     :prefetch => 100,
 
-    # :num_read_deps => 10,
 
     :max_num_friends => 500,
     :coeff_num_friends => 0.8,
