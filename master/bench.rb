@@ -240,7 +240,7 @@ end
 def _benchmark(variables, options={})
   key, values = options.select { |k,v| v.is_a?(Array) }.first
   if values
-    values.each { |v| _benchmark(variables + [key], options.merge(key => v)) }
+    values.uniq.each { |v| _benchmark(variables + [key], options.merge(key => v)) }
   else
     benchmark_once(variables, options)
   end
@@ -266,7 +266,7 @@ begin
 
   options = {
     :num_users => 1000,
-    :num_read_deps => [1,10,100,100],
+    :num_read_deps => [1000],
     :num_workers => [1,2,5,10,20,50,100],
     :hash_size => 0,
     :num_redis => 15,
