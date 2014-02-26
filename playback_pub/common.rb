@@ -87,8 +87,8 @@ class Stats
       start = Time.now
       block.call
     ensure
-      # 0.1ms precision
-      self << ((Time.now - start) * 10000).round
+      # 0.01ms precision
+      self << ((Time.now - start) * 100000).round
     end
 
     def publish

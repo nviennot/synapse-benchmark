@@ -128,7 +128,8 @@ module Stats
       clean_samples = @samples.sort_by { |x| -x }.to_a[drop_window/2 ... -drop_window/2]
       avg = clean_samples.reduce(:+) / clean_samples.size.to_f
 
-      STDERR.puts "Sampling avg rate of #{@key}: #{avg.round(1)}#{unit}"
+      STDERR.puts
+      STDERR.puts "Average sampling of #{@key}: \e[1;36m#{avg.round(1)}\e[0m#{unit}"
       avg
     end
   end
@@ -160,7 +161,7 @@ module Stats
         return
       end
 
-      t.to_f / (s.to_f * 10)
+      t.to_f / (s.to_f * 100)
     end
 
     def unit
@@ -209,7 +210,9 @@ def benchmark_once(variables, options={})
 
     tries -= 1
     jobs = run_benchmark(options)
-    rate, pub_overhead = measure_stats(jobs, options).round(1)
+    rate, pub_overhead = measure_stats(jobs, options)
+    rate = rate.round(1)
+    pub_overhead = pub_overhead.round(2)
     puts
     puts
     jobs.kill
@@ -262,8 +265,8 @@ begin
 
   options = {
     :num_users => 1000,
+    :num_read_deps => [0,9,99,999],
     :num_workers => [1,2,5,10,20,50,100],
-    # :num_read_deps => [0,10,100,1000],
     :hash_size => 0,
     :num_redis => 10,
     # :num_workers => 100,
