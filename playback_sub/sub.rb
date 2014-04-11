@@ -5,17 +5,17 @@ bootstrap(:sub)
 
 class User
   include Promiscuous::Subscriber::Model::Observer
-  subscribe
+  subscribe :from => :pub
 end
 
 class Post
   include Promiscuous::Subscriber::Model::Observer
-  subscribe
+  subscribe :from => :pub
 end
 
 class Comment
   include Promiscuous::Subscriber::Model::Observer
-  subscribe
+  subscribe :from => :pub
 end
 
 finalize_bootstrap(:sub)
