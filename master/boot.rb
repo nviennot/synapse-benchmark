@@ -13,5 +13,5 @@ def kill_all
 end
 
 def ruby_exec(cmd)
-  "unset BUNDLE_GEMFILE && unset RVM_ENV && unset BUNDLE_BIN_PATH && unset RUBYOPT && exec rvm ruby-2.0@promiscuous-benchmark do bundle exec #{cmd}"
+  "unset BUNDLE_GEMFILE && unset RVM_ENV && unset BUNDLE_BIN_PATH && unset RUBYOPT && exec rvm ruby-2.1.1 do bundle exec #{cmd}"
 end

@@ -12,16 +12,14 @@ end
 def update_app
   run <<-SCRIPT, "Updating application"
     cd /srv/promiscuous-benchmark &&
-    git fetch https://github.com/nviennot/promiscuous-benchmark.git
-    git reset --hard FETCH_HEAD
+    git fetch &&
+    git reset --hard FETCH_HEAD &&
     unset BUNDLE_GEMFILE &&
     unset RVM_ENV &&
     unset BUNDLE_BIN_PATH &&
     unset RUBYOPT &&
     cd /srv/promiscuous-benchmark/playback_pub &&
-    rvm ruby-2.0@promiscuous-benchmark do bundle install &&
-    cd /srv/promiscuous-benchmark/playback_sub &&
-    rvm ruby-2.0@promiscuous-benchmark do bundle install
+    rvm ruby-2.1.1 do bundle install
   SCRIPT
 end
 
