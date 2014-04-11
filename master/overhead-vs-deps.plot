@@ -6,7 +6,7 @@ set output "overhead-vs-deps.pdf"
 #set format y "%.0e"
 set ylabel "Average publisher overhead [ms]" font "Times-Roman,14"
 #set ylabel offset +1.2,0
-set yrange [1:3000]
+set yrange [3:3000]
 
 set xlabel "Number of dependencies" font "Times-Roman,14"
 #set xlabel offset 0,+1
@@ -34,6 +34,6 @@ set key reverse top left font "Times-Roman,14"
 
 set datafile missing
 
-plot 'overhead-vs-deps.dat' using 1:4 title "50 Redis"  with linespoint lt 1 ps 1 lw 4 lc 3 pt 6, \
-     ''                     using 1:3 title "10 Redis"  with linespoint lt 1 ps 1 lw 4 lc 4 pt 2, \
-     ''                     using 1:2 title "1 Redis"   with linespoint lt 1 ps 1 lw 4 lc 2 pt 4
+plot 'overhead-vs-deps.dat' using 1:2 title "1  Redis"  with linespoint lt 1 ps 1 lw 4 lc 4 pt 2, \
+     ''                     using 1:3 title "10 Redis"  with linespoint lt 1 ps 1 lw 4 lc 3 pt 6, \
+     ''                     using 1:4 title "50 Redis"  with linespoint lt 1 ps 1 lw 4 lc 2 pt 4

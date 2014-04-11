@@ -5,14 +5,14 @@ Bundler.require
 $master = Redis.new(:url => 'redis://master/')
 $worker_index = ENV['WORKER_INDEX'].to_i
 
-# module Promiscuous::Redis
-  # def self.new_connection(url=nil)
-    # url ||= Promiscuous::Config.redis_urls
-    # redis = ::Redis::Distributed.new(url, :timeout => 20, :tcp_keepalive => 60)
-    # redis.info.each { }
-    # redis
-  # end
-# end
+module Promiscuous::Redis
+  def self.new_connection(url=nil)
+    url ||= Promiscuous::Config.redis_urls
+    redis = ::Redis::Distributed.new(url, :timeout => 20, :tcp_keepalive => 60)
+    redis.info.each { }
+    redis
+  end
+end
 
 class Promiscuous::Subscriber::Worker::MessageSynchronizer
   remove_const :CLEANUP_INTERVAL

@@ -266,14 +266,14 @@ begin
 
   options = {
     :num_users => 1000,
-    :num_workers => 100,
-    :num_redis => [50],
-    :num_read_deps => [1,2,5,10,20,50,100,200,500,1000],
+    # :sub_latency => [nil, "0.010", "0.100"],
+    :num_workers => [400],
+    :num_redis => 50,
+    #:num_read_deps => [1,2,5,10,20,50,100,200,500,1000],
     :hash_size => 0,
     # :num_workers => 100,
 
     #:pub_latency => "0.002",
-    #:sub_latency => "0.002",
     :cleanup_interval => 10,
     :queue_max_age => 50,
     :prefetch => 100,
