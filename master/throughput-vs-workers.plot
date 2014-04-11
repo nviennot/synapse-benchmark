@@ -1,4 +1,4 @@
-set terminal pdf dashed size 5,4
+set terminal pdf dashed size 4,2.5
 set output "throughput-vs-workers.pdf"
 
 #set autoscale fix
@@ -6,18 +6,18 @@ set output "throughput-vs-workers.pdf"
 #set format y "%.0e"
 set ylabel "Throughput [msg/s]" font "Times-Roman,14"
 #set ylabel offset +1.2,0
-set yrange [7:30000]
+set yrange [9:50000]
 
-set xlabel "Number of Workers" font "Times-Roman,14"
+set xlabel "Number of workers" font "Times-Roman,14"
 #set xlabel offset 0,+1
-set xrange [1:100]
+set xrange [1:350]
 set xtics font "Times-Roman,14"
 set ytics font "Times-Roman,14"
 
 set logscale xy
 
-set ytics (7, 10,20,30,50,70,100,200,300,500,700,1000,2000,3000,5000,7000,10000,20000,30000)
-set xtics (1,2,5,10,20,50,100)
+set ytics (3, 10, 30, 100, 300, 1000, 3000, 10000, 30000, 50000)
+set xtics (1,2,5,10,20,50,100, 200, 350)
 set grid ytics
 set grid xtics
 # set ytics 250 font "Times-Roman,14"
@@ -34,7 +34,6 @@ set key reverse top left font "Times-Roman,14"
 
 set datafile missing
 
-plot 'throughput-vs-workers.dat' using 1:5 title "1000 deps" with linespoint lt 1 ps 1 lw 4 lc 1 pt 1, \
-     ''                          using 1:4 title "100 deps"  with linespoint lt 1 ps 1 lw 4 lc 3 pt 6, \
-     ''                          using 1:3 title "10 deps"   with linespoint lt 1 ps 1 lw 4 lc 4 pt 2, \
-     ''                          using 1:2 title "1 deps"    with linespoint lt 1 ps 1 lw 4 lc 2 pt 4
+plot 'throughput-vs-workers.dat' using 1:2 title "0ms callback"   with linespoint lt 1 ps 1 lw 4 lc 4 pt 2, \
+     ''                          using 1:3 title "10ms callback"  with linespoint lt 1 ps 1 lw 4 lc 3 pt 6, \
+     ''                          using 1:4 title "100ms callback" with linespoint lt 1 ps 1 lw 4 lc 2 pt 4

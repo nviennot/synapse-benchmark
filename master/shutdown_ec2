@@ -1,0 +1,6 @@
+#!/bin/bash
+source aws_keys
+
+mkdir -p /tmp/ec2/
+ec2-describe-instances > /tmp/ec2/instances
+ec2-terminate-instances `cat /tmp/ec2/instances | grep INSTANCE | awk '{print $2}'`

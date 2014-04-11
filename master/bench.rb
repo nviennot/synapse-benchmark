@@ -196,7 +196,7 @@ def measure_stats(jobs, options={})
 end
 
 def benchmark_once(variables, options={})
-  num_tries = 3
+  num_tries = 30
   tries = num_tries
 
   options = options.dup
@@ -266,9 +266,9 @@ begin
 
   options = {
     :num_users => 1000,
-    # :sub_latency => [nil, "0.010", "0.100"],
-    :num_workers => [400],
-    :num_redis => 50,
+    :sub_latency => ["0.010", "0.100", "1.000"],
+    :num_workers => [1, 2, 5, 10, 20, 50, 100, 200, 350].reverse,
+    :num_redis => 100,
     #:num_read_deps => [1,2,5,10,20,50,100,200,500,1000],
     :hash_size => 0,
     # :num_workers => 100,
