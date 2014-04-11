@@ -266,8 +266,8 @@ begin
 
   options = {
     :num_users => 1000,
-    :num_read_deps => [1000],
-    :num_workers => [1,2,5,10,20,50,100],
+    :num_workers => [1],
+    :num_read_deps => [1,2,5,10,20,50,100,200,500,1000],
     :hash_size => 0,
     :num_redis => 15,
     # :num_workers => 100,

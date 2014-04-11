@@ -34,7 +34,7 @@ set key reverse top left font "Times-Roman,14"
 
 set datafile missing
 
-plot 'overhead-vs-workers.dat' using 1:5 title "1000 deps" with linespoint lt 1 ps 1 lw 3 lc 1 pt 1, \
-     ''                        using 1:4 title "100 deps"  with linespoint lt 1 ps 1 lw 3 lc 3 pt 6, \
-     ''                        using 1:3 title "10 deps"   with linespoint lt 1 ps 1 lw 3 lc 4 pt 2, \
-     ''                        using 1:2 title "1 deps"    with linespoint lt 1 ps 1 lw 3 lc 2 pt 4
+plot 'overhead-vs-workers.dat' using 1:5 title "1000 deps" with linespoint lt 1 ps 1 lw 4 lc 1 pt 1, \
+     ''                        using 1:4 title "100 deps"  with linespoint lt 1 ps 1 lw 4 lc 3 pt 6, \
+     ''                        using 1:3 title "10 deps"   with linespoint lt 1 ps 1 lw 4 lc 4 pt 2, \
+     ''                        using 1:2 title "1 deps"    with linespoint lt 1 ps 1 lw 4 lc 2 pt 4
