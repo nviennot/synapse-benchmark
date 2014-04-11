@@ -150,7 +150,8 @@ def add_instrumentation(type)
     end
   when :sub
     $msg_count_bench = Stats::Counter.new('sub_msg')
-    Promiscuous::Subscriber::Model.mapping.values.map(&:values).flatten.each do |klass|
+    Promiscuous::Subscriber::Model.mapping.values.map(&:values)
+                  .flatten.map { |m| m[:model] }.uniq.each do |klass|
       klass.after_save do
         $msg_count_bench.inc
         sleep ENV['SUB_LATENCY'].to_f if ENV['SUB_LATENCY']
