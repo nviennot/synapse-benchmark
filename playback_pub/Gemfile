@@ -3,4 +3,4 @@ source 'https://rubygems.org'
 gem 'pry', :require => false
 gem 'promiscuous', :git => 'https://github.com/nviennot/promiscuous.git', :branch => 'master'
 gem 'zipfian'
-gem 'bunny', :git => 'https://github.com/ruby-amqp/bunny.git', :branch => 'master'
+gem 'bunny', :git => 'https://github.com/nviennot/bunny.git', :branch => 'master'

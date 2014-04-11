@@ -1,4 +1,12 @@
 GIT
+  remote: https://github.com/nviennot/bunny.git
+  revision: 987876245a4c9dae3cd2198f427eeef2581cf139
+  branch: master
+  specs:
+    bunny (1.3.0.pre)
+      amq-protocol (>= 1.9.2)
+
+GIT
   remote: https://github.com/nviennot/promiscuous.git
   revision: 09dd931ff4c141b52074e478fbcdbfe925789154
   branch: master
@@ -13,14 +21,6 @@ GIT
       multi_json (~> 1.8.0)
       redis (~> 3.0.2)
       ruby-progressbar (~> 1.4.0)
-
-GIT
-  remote: https://github.com/ruby-amqp/bunny.git
-  revision: 45ba6b3561c1b83c98614e9a133873cfec74b458
-  branch: master
-  specs:
-    bunny (1.3.0.pre)
-      amq-protocol (>= 1.9.2)
 
 GEM
   remote: https://rubygems.org/
