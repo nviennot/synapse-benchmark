@@ -30,10 +30,10 @@ end
 
 `gnuplot throughput-vs-workers.plot`
 
-File.open('overhead-vs-workers.dat', 'w') do |f|
+File.open('overhead-vs-deps.dat', 'w') do |f|
   overhead.each do |workers, ur|
     f.puts([workers, *users.map { |u| ur[u] }].join(' '))
   end
 end
 
-`gnuplot overhead-vs-workers.plot`
+`gnuplot overhead-vs-deps.plot`

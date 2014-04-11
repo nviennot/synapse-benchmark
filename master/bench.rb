@@ -10,15 +10,15 @@ def update_app
   SCRIPT
 end
 
-def register_redis_ips
-  run <<-SCRIPT, "Prepping redis (sub)", :tag => :sub_redis
-    redis-cli -h localhost flushdb &&
-    redis-cli -h master rpush ip:sub_redis `hostname -i`
-  SCRIPT
-
-  run <<-SCRIPT, "Prepping redis (pub)", :tag => :pub_redis
+def register_redis_ips(options={})
+  run <<-SCRIPT, "Prepping redis (pub)", :tag => :pub_redis, :num_workers => options[:num_pub_redis]
     redis-cli -h localhost flushdb &&
     redis-cli -h master rpush ip:pub_redis `hostname -i`
+  SCRIPT
+
+  run <<-SCRIPT, "Prepping redis (sub)", :tag => :sub_redis, :num_workers => options[:num_sub_redis]
+    redis-cli -h localhost flushdb &&
+    redis-cli -h master rpush ip:sub_redis `hostname -i`
   SCRIPT
 end
 
@@ -73,7 +73,7 @@ def run_benchmark(options={})
 
   @abricot.multi do
     clean_rabbitmq
-    register_redis_ips
+    register_redis_ips(options)
   end
 
   jobs = @abricot.multi :async => true do
@@ -262,14 +262,14 @@ begin
   kill_all
   @master = Redis.new(:url => 'redis://master/')
   # benchmark_all
-  update_app
+  # update_app
 
   options = {
     :num_users => 1000,
-    :num_workers => [1],
+    :num_workers => 100,
+    :num_redis => [50],
     :num_read_deps => [1,2,5,10,20,50,100,200,500,1000],
     :hash_size => 0,
-    :num_redis => 15,
     # :num_workers => 100,
 
     #:pub_latency => "0.002",
