@@ -5,5 +5,7 @@ gem 'oj'
 gem 'thor'
 gem 'multi_json'
 gem 'pry'
+gem 'hashie'
+gem 'awesome_print'
 
 gem 'zipfian'

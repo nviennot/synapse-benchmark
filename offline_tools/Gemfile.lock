@@ -10,7 +10,9 @@ GEM
   remote: https://rubygems.org/
   specs:
     algorithms (0.5.0)
+    awesome_print (1.2.0)
     coderay (1.1.0)
+    hashie (2.1.0)
     method_source (0.8.2)
     multi_json (1.9.2)
     oj (2.7.2)
@@ -27,6 +29,8 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  awesome_print
+  hashie
   multi_json
   oj
   pry
