@@ -91,16 +91,19 @@ def auto_find_cuts(slices, cuts)
   total_duration = slices.map(&:end).max
   wanted_total_duration = 3000
   min_cut_size = 0.10 * wanted_total_duration
-  cut_margin = 0.01 * wanted_total_duration
+  cut_margin = 0.02 * wanted_total_duration
 
   points = (slices.map(&:start) + slices.map(&:end)).flatten.sort
-  intervals = points.each_cons(2).map { |left, right| Slice.new(:start => left + cut_margin, :end => right - cut_margin) }
+  intervals = points.each_cons(2).map do |left, right|
+    Slice.new(:start => left + cut_margin, :end => right - cut_margin)
+  end
   intervals = intervals.select { |i| i.duration > min_cut_size }.sort_by(&:duration)
 
   time_to_remove = total_duration - wanted_total_duration
   intervals.each do |cut|
     return unless time_to_remove > 0
-    unless (cuts.map(&:start) + cuts.map(&:end)).flatten.any? { |p| cut.include?(p) }
+
+    unless cuts.any? { |_cut| [cut.start, cut.end].any? { |c| _cut.include?(c) } }
       time_to_remove -= cut.duration
       cut.type = slices.any? { |s| s.start <= cut.start && s.end >= cut.end } ? :visual : :silent
       cuts << cut
@@ -112,6 +115,7 @@ apply_cuts(slices, [Slice.new(:type => :silent, :start => 0.0, :end => slices.fi
 orig_slices = slices.map(&:dup)
 auto_find_cuts(slices, cuts)
 apply_cuts(slices, cuts)
+cuts = cuts.sort_by(&:start)
 
 def build_tree(slices, parent=nil)
   slices = slices.dup
@@ -156,10 +160,8 @@ end
 slices = destack_tree(tree).sort_by(&:start)
 
 def print_header(slices)
-  puts <<-PLOT
-set terminal pdf dashed size 14,2
-set output "gantt_chart.pdf"
-  PLOT
+  puts "set terminal pdf dashed size 14,2"
+  puts "set output 'gantt_chart.pdf'"
 end
 
 def mapping_of(slices, type)
@@ -224,28 +226,90 @@ def print_yaxis(slices)
   puts "set ytics (#{ytics.flatten.join(",")})"
 end
 
-def print_xaxis(slices)
+def print_xaxis(slices, cuts)
+  apps = mapping_of(slices, :app_name)
   xmin = slices.map(&:start).min
   xmax = slices.map(&:end).max
 
-  puts "set xlabel 'Time [ms]'"
+  xmax = (xmax.to_i/50+1)*50
+
+  puts "set xlabel 'Time [ms]' offset 0,-1"
   puts "set xtics font 'Times-Roman,14'"
-  puts "set xrange [#{xmin}:#{(xmax.to_i/50+1)*50}]"
+  # puts "set xrange [#{xmin}:#{xmax}]"
+  puts "set xrange [#{xmin}:#{xmax}]"
   puts "set grid xtics"
+
+  cut_display_size = 10
+  xtics = []
+
+  def print_tics(xtics, real_left, real_right, effective_offset)
+    effective_offset = effective_offset.to_i
+    tic_every = 50
+    (real_left.to_i..real_right.to_i).each do |x|
+      if (effective_offset+x) % tic_every == 0
+        unless [(x-real_left).abs, (x-real_right).abs].min < 10
+          xtics << "'' #{x}"
+          puts "set label '#{effective_offset+x}' at #{x},#{-1.0} center"
+        end
+      end
+    end
+  end
+
+  if cuts.empty?
+    print_tics(xtics, 0, xmax, 0)
+  else
+    last_cut = nil
+    real_offset = 0
+    cut_offset = 0
+    last_real_right_cut = 0
+
+    cuts.each do |cut|
+      if cut.type == :silent
+        cut_offset += cut.duration
+        next
+      end
+
+      real_left_cut = cut.start - cut_offset
+      real_right_cut = real_left_cut + cut_display_size
+
+      if last_cut
+        print_tics(xtics, last_real_right_cut, real_left_cut, real_offset)
+      else
+        print_tics(xtics, 0, cut.start, 0)
+      end
+
+      coords1 = "from #{real_left_cut},#{-0.7} to #{real_left_cut},#{apps.count+0.5}"
+      coords2 = "from #{real_right_cut},#{-0.7} to #{real_right_cut},#{apps.count+0.5}"
+      coordsr = "from #{real_left_cut+1},#{-2} to #{real_right_cut-1},#{apps.count+0.5}"
+      puts "set object #{next_rect_id} rect #{coordsr} fs solid 1.0 noborder"
+
+      puts "set arrow #{coords1} nohead ls 5 lc 0 lw 4"
+      puts "set arrow #{coords2} nohead ls 5 lc 0 lw 4"
+
+      last_cut = cut
+
+      cut_offset += cut.duration
+      real_offset += cut.duration
+      last_real_right_cut = real_right_cut
+    end
+    print_tics(xtics, last_real_right_cut, xmax, real_offset)
+  end
+
+  puts "set xtics (#{xtics.flatten.join(",")})"
 end
 
 def print_key(slices)
   apps = mapping_of(slices, :app_name)
   total_duration = slices.map(&:end).max
 
-  xlow_key = 0.01 * total_duration
-  xhigh_key = 0.55 * total_duration
+  xlow_key = 0.51 * total_duration
+  xhigh_key = 1.05 * total_duration
 
   ylow_key = apps.count - 0.3
   yhigh_key = apps.count
 
   coords = "from #{xlow_key},#{ylow_key-0.2} to #{xhigh_key},#{yhigh_key+0.2}"
-  puts "set object #{next_rect_id} rect #{coords} fs solid 0 noborder"
+  puts "set object #{next_rect_id} rect #{coords} front fs solid 0 noborder"
 
   items = {'Application/DB'    => :app,
            'Synapse publish'   => :publish,
@@ -261,8 +325,8 @@ def print_key(slices)
     ylabel = ylow + (yhigh - ylow)*0.5
 
     coords = "from #{xlow},#{ylow} to #{xhigh},#{yhigh}"
-    puts "set object #{next_rect_id} rect #{coords} #{get_slice_style(Slice.new(:type => style))}"
-    puts "set label '#{name}' at #{xlabel},#{ylabel}"
+    puts "set object #{next_rect_id} rect #{coords} front #{get_slice_style(Slice.new(:type => style))}"
+    puts "set label '#{name}' at #{xlabel},#{ylabel} front"
 
     key_offset += (xhigh_key - xlow_key)/items.size.to_f
   end
@@ -274,11 +338,11 @@ end
 print_header(slices)
 print_slices(slices)
 print_yaxis(slices)
-print_xaxis(slices)
+print_xaxis(slices, cuts)
 print_key(slices)
 
 (cuts + slices + orig_slices).each { |s| s.start = s.start.round(0); s.end = s.end.round(0) }
 AwesomePrint.force_colors = true
 STDERR.puts tree.ai
 STDERR.puts "-" * 80
-STDERR.puts cuts.sort_by(&:start).ai
+STDERR.puts cuts.ai
