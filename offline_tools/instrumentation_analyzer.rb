@@ -63,7 +63,7 @@ end.compact.reduce({}) do |results, (slice, controller, read_deps)|
 
     if slice.type == :publish
       r[:read_deps] += read_deps.flatten.uniq.size
-      r[:read_deps_with_tracking] += read_deps.reject(&:empty?).size
+      r[:read_deps_with_tracking] += read_deps.reject(&:empty?).uniq.size
       r[:num_publish] += 1
       r[:publish_duration] += slice.duration
     end
