@@ -56,7 +56,10 @@ def parse_file(file)
     next unless line =~ /^\[([^\]]+) ([0-9]+)-([0-9]+)\] (.+) (.+)-([^ ]+) (.*)$/
     options = {:app => $1, :pid => $2, :tid => $3, :type => $4.to_sym, :start => Float($5) * 1000, :end => Float($6) * 1000}
     options[:desc] = $7 unless $7.empty?
-    Slice.new(options)
+    slice = Slice.new(options)
+    if slice.type == :app_controller && slice.desc =~ /(.+) -- (.+)/
+      slice.desc = $1
+    end
   end.compact
 end
 
