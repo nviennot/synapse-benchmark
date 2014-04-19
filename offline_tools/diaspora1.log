@@ -1,0 +1,54 @@
+[diaspora 9542-76108700] db_non_instrumented 1397947257.0771813-1397947257.0777872 
+[diaspora 9542-76108700] db_instrumented 1397947257.0800688-1397947257.0808718 
+[diaspora 9542-76108700] publish 1397947257.080059-1397947257.0809505 
+[diaspora 9542-76108700] db_instrumented 1397947257.0817728-1397947257.0823574 
+[diaspora 9542-76108700] publish 1397947257.0817652-1397947257.0824008 
+[diaspora 9542-76108700] db_instrumented 1397947257.0830002-1397947257.083552 
+[diaspora 9542-76108700] publish 1397947257.0829933-1397947257.0835967 
+[diaspora 9542-76108700] db_instrumented 1397947257.0840929-1397947257.0847616 
+[diaspora 9542-76108700] publish 1397947257.0840857-1397947257.0847936 
+[diaspora 9542-76108700] db_instrumented 1397947257.0937116-1397947257.0949435 
+[diaspora 9542-76108700] publish 1397947257.0937023-1397947257.0950203 
+[diaspora 9542-76108700] db_instrumented 1397947257.1059873-1397947257.1072636 
+[diaspora 9542-76108700] publish 1397947257.1059759-1397947257.1073244 
+[diaspora 9542-76108700] db_instrumented 1397947257.1124482-1397947257.1129322 
+[diaspora 9542-76108700] publish 1397947257.1124387-1397947257.1130092 
+[diaspora 9542-76108700] db_instrumented 1397947257.1154022-1397947257.116123 
+[diaspora 9542-76108700] publish 1397947257.1153944-1397947257.116168 
+[diaspora 9542-76108700] db_instrumented 1397947257.118404-1397947257.1188664 
+[diaspora 9542-76108700] publish 1397947257.1183965-1397947257.1189127 
+[diaspora 9542-76108700] db_instrumented 1397947257.1194167-1397947257.119943 
+[diaspora 9542-76108700] publish 1397947257.1194103-1397947257.119993 
+[diaspora 9542-76108700] db_instrumented 1397947257.1250591-1397947257.1255903 
+[diaspora 9542-76108700] publish 1397947257.1250508-1397947257.1256442 
+[diaspora 9542-76108700] db_instrumented 1397947257.1321573-1397947257.1325388 
+[diaspora 9542-76108700] publish 1397947257.1321492-1397947257.1325917 
+[diaspora 9542-76108700] db_instrumented 1397947257.1378946-1397947257.1383767 
+[diaspora 9542-76108700] publish 1397947257.13788-1397947257.1384284 
+[diaspora 9542-76108700] db_instrumented 1397947257.1392286-1397947257.1397312 
+[diaspora 9542-76108700] publish 1397947257.1392198-1397947257.1397808 
+[diaspora 9542-76108700] db_instrumented 1397947257.1428556-1397947257.143378 
+[diaspora 9542-76108700] publish 1397947257.1428485-1397947257.143427 
+[diaspora 9542-76108700] db_instrumented 1397947257.1456418-1397947257.146063 
+[diaspora 9542-76108700] publish 1397947257.145634-1397947257.1461153 
+[diaspora 9542-76108700] db_prepare 1397947257.146369-1397947257.151326 
+[diaspora 9542-76108700] db_instrumented 1397947257.157426-1397947257.1677835 
+[diaspora 9542-76108700] publish 1397947257.1408796-1397947257.1744971 {"operations":[{"types":["StatusMessage","Post"],"id":"32","attributes":{"author_id":3,"public":false,"diaspora_handle":"eve@localhost:3000","guid":"79564412a9ee6f29","text":"I love china"},"operation":"create"},{"types":["Photo"],"id":"18","attributes":{"author_id":3,"public":false,"diaspora_handle":"eve@localhost:3000","remote_photo_path":"http://localhost:3000/uploads/images/","remote_photo_name":"ad608a76131519676e01.png","guid":"85d34f407ef38129","status_message_guid":"79564412a9ee6f29"},"operation":"update"},{"types":["AspectVisibility"],"id":"42","attributes":{"aspect_id":3,"shareable_id":32,"shareable_type":"Post"},"operation":"create"}],"app":"diaspora","context":"status_messages/create","current_user_id":3,"timestamp":1397947257167,"generation":1,"dependencies":{"read":["people/id/3:0","aspects/id/3:0"],"write":["posts/id/32:0","photos/id/18:1","aspect_visibilities/id/42:0","users/id/3:6"]},"real_deps":{"read":[["people/id/3"],["people/id/3"],["people/id/3"],["photos/id/18"],["aspects/id/3"],["people/id/3"],["users/id/3"],["users/id/3"],["people/id/3"],["people/id/3"],["people/id/3"]],"write":["posts/id/32","photos/id/18","aspect_visibilities/id/42"]}}
+[spree_app 9444-70206960] app_callbacks 1397947257.178214-1397947257.1789072 
+[spree_app 9444-70206960] subscribe 1397947257.177841-1397947257.1923528 {"operations":[{"types":["StatusMessage","Post"],"id":"32","attributes":{"author_id":3,"public":false,"diaspora_handle":"eve@localhost:3000","guid":"79564412a9ee6f29","text":"I love china"},"operation":"create"},{"types":["Photo"],"id":"18","attributes":{"author_id":3,"public":false,"diaspora_handle":"eve@localhost:3000","remote_photo_path":"http://localhost:3000/uploads/images/","remote_photo_name":"ad608a76131519676e01.png","guid":"85d34f407ef38129","status_message_guid":"79564412a9ee6f29"},"operation":"update"},{"types":["AspectVisibility"],"id":"42","attributes":{"aspect_id":3,"shareable_id":32,"shareable_type":"Post"},"operation":"create"}],"app":"diaspora","context":"status_messages/create","current_user_id":3,"timestamp":1397947257167,"generation":1,"dependencies":{"read":["people/id/3:0","aspects/id/3:0"],"write":["posts/id/32:0","photos/id/18:1","aspect_visibilities/id/42:0","users/id/3:6"]},"real_deps":{"read":[["people/id/3"],["people/id/3"],["people/id/3"],["photos/id/18"],["aspects/id/3"],["people/id/3"],["users/id/3"],["users/id/3"],["people/id/3"],["people/id/3"],["people/id/3"]],"write":["posts/id/32","photos/id/18","aspect_visibilities/id/42"]}}
+[diaspora 9542-76108700] app_controller 1397947257.078146-1397947257.1972313 status_messages/create -- []
+[diaspora_email 9429-40113100] app_callbacks 1397947257.178165-1397947257.2486608 
+[diaspora_email 9429-40113100] subscribe 1397947257.1778061-1397947257.249769 {"operations":[{"types":["StatusMessage","Post"],"id":"32","attributes":{"author_id":3,"public":false,"diaspora_handle":"eve@localhost:3000","guid":"79564412a9ee6f29","text":"I love china"},"operation":"create"},{"types":["Photo"],"id":"18","attributes":{"author_id":3,"public":false,"diaspora_handle":"eve@localhost:3000","remote_photo_path":"http://localhost:3000/uploads/images/","remote_photo_name":"ad608a76131519676e01.png","guid":"85d34f407ef38129","status_message_guid":"79564412a9ee6f29"},"operation":"update"},{"types":["AspectVisibility"],"id":"42","attributes":{"aspect_id":3,"shareable_id":32,"shareable_type":"Post"},"operation":"create"}],"app":"diaspora","context":"status_messages/create","current_user_id":3,"timestamp":1397947257167,"generation":1,"dependencies":{"read":["people/id/3:0","aspects/id/3:0"],"write":["posts/id/32:0","photos/id/18:1","aspect_visibilities/id/42:0","users/id/3:6"]},"real_deps":{"read":[["people/id/3"],["people/id/3"],["people/id/3"],["photos/id/18"],["aspects/id/3"],["people/id/3"],["users/id/3"],["users/id/3"],["people/id/3"],["people/id/3"],["people/id/3"]],"write":["posts/id/32","photos/id/18","aspect_visibilities/id/42"]}}
+[diaspora_topic 9518-69934986049940] db_instrumented 1397947259.747523-1397947259.7480252 
+[diaspora_topic 9518-69934986049940] publish 1397947259.7475166-1397947259.7480955 
+[diaspora_topic 9518-69934986049940] db_instrumented 1397947259.750997-1397947259.7516735 
+[diaspora_topic 9518-69934986049940] publish 1397947259.7509916-1397947259.751722 
+[diaspora_topic 9518-69934986049940] db_prepare 1397947259.7526925-1397947259.7589958 
+[diaspora_topic 9518-69934986049940] db_instrumented 1397947259.761182-1397947259.770053 
+[diaspora_topic 9518-69934986049940] publish 1397947259.7519794-1397947259.7725642 {"operations":[{"types":["User"],"id":"3","attributes":{"topics":["fish","boat"]},"operation":"update"}],"app":"diaspora_topic","context":"subscriber","timestamp":1397947259770,"generation":1,"dependencies":{"external":["diaspora:posts/id/32:1","diaspora:photos/id/18:2","diaspora:aspect_visibilities/id/42:1","diaspora:users/id/3:7"],"write":["users/id/3:3"]},"real_deps":{"read":[["users/id/3","users/id/3"]],"write":["users/id/3","users/id/3"]}}
+[diaspora_topic 9518-69934986049940] app_callbacks 1397947257.1781344-1397947259.7733593 
+[diaspora_topic 9518-69934986049940] subscribe 1397947257.1778207-1397947259.7748692 {"operations":[{"types":["StatusMessage","Post"],"id":"32","attributes":{"author_id":3,"public":false,"diaspora_handle":"eve@localhost:3000","guid":"79564412a9ee6f29","text":"I love china"},"operation":"create"},{"types":["Photo"],"id":"18","attributes":{"author_id":3,"public":false,"diaspora_handle":"eve@localhost:3000","remote_photo_path":"http://localhost:3000/uploads/images/","remote_photo_name":"ad608a76131519676e01.png","guid":"85d34f407ef38129","status_message_guid":"79564412a9ee6f29"},"operation":"update"},{"types":["AspectVisibility"],"id":"42","attributes":{"aspect_id":3,"shareable_id":32,"shareable_type":"Post"},"operation":"create"}],"app":"diaspora","context":"status_messages/create","current_user_id":3,"timestamp":1397947257167,"generation":1,"dependencies":{"read":["people/id/3:0","aspects/id/3:0"],"write":["posts/id/32:0","photos/id/18:1","aspect_visibilities/id/42:0","users/id/3:6"]},"real_deps":{"read":[["people/id/3"],["people/id/3"],["people/id/3"],["photos/id/18"],["aspects/id/3"],["people/id/3"],["users/id/3"],["users/id/3"],["people/id/3"],["people/id/3"],["people/id/3"]],"write":["posts/id/32","photos/id/18","aspect_visibilities/id/42"]}}
+[diaspora 9457-65380780] app_callbacks 1397947259.7767777-1397947259.7778912 
+[spree_app 9444-70206640] app_callbacks 1397947259.7773278-1397947259.7781887 
+[diaspora 9457-65380780] subscribe 1397947259.7760842-1397947259.7785923 {"operations":[{"types":["User"],"id":"3","attributes":{"topics":["fish","boat"]},"operation":"update"}],"app":"diaspora_topic","context":"subscriber","timestamp":1397947259770,"generation":1,"dependencies":{"external":["diaspora:posts/id/32:1","diaspora:photos/id/18:2","diaspora:aspect_visibilities/id/42:1","diaspora:users/id/3:7"],"write":["users/id/3:3"]},"real_deps":{"read":[["users/id/3","users/id/3"]],"write":["users/id/3","users/id/3"]}}
+[spree_app 9444-70206640] subscribe 1397947259.7768354-1397947259.7789361 {"operations":[{"types":["User"],"id":"3","attributes":{"topics":["fish","boat"]},"operation":"update"}],"app":"diaspora_topic","context":"subscriber","timestamp":1397947259770,"generation":1,"dependencies":{"external":["diaspora:posts/id/32:1","diaspora:photos/id/18:2","diaspora:aspect_visibilities/id/42:1","diaspora:users/id/3:7"],"write":["users/id/3:3"]},"real_deps":{"read":[["users/id/3","users/id/3"]],"write":["users/id/3","users/id/3"]}}

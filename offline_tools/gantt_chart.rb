@@ -5,6 +5,9 @@ Bundler.require
 require 'multi_json'
 require 'optparse'
 
+$force_single_thread = false
+$output = "gantt_chart.pdf"
+
 class Slice < Hashie::Mash
   def duration
     self.end - self.start
@@ -15,7 +18,7 @@ class Slice < Hashie::Mash
   end
 
   def thread_id
-    self.pid
+    $force_single_thread ? 1 : self.pid
   end
 
   def app_name
@@ -42,24 +45,37 @@ cuts = []
 OptionParser.new do |opts|
   opts.banner = "Usage: gantt_chart.rb FILE [options] | gnuplot"
 
-  opts.on("-c", "--visual-cut start,end", Array, "Cut with lines") do |start_time, end_time|
+  opts.on("-v", "--visual-cut start,end", Array, "Cut with lines") do |start_time, end_time|
     cuts << Slice.new(:type => :visual, :start => Float(start_time), :end => Float(end_time))
   end
 
   opts.on("-s", "--silent-cut start,end", Array, "Suppress some time") do |start_time, end_time|
     cuts << Slice.new(:type => :silent, :start => Float(start_time), :end => Float(end_time))
   end
+
+  opts.on("-r", "--remove-slice app,start,end", Array, "Suppress some time") do |app, start_time, end_time|
+    cuts << Slice.new(:type => :slient, :start => Float(start_time), :end => Float(end_time), :app => app)
+  end
+
+  opts.on("-t", "--single-thread", "Suppress some time") do
+    $force_single_thread = true
+  end
+
+  opts.on("-o", "--output output", "Output PDF file") do |output|
+    $output = output
+  end
 end.parse!
 
 def parse_file(file)
   File.open(file).readlines.map do |line|
-    next unless line =~ /^\[([^\]]+) ([0-9]+)-([0-9]+)\] (.+) (.+)-([^ ]+) (.*)$/
+    next unless line =~ /^\[([^\]]+) ([0-9]+)-([0-9]+)\] ([^ ]+) ([0-9.]+)-([0-9.]+) (.*)$/
     options = {:app => $1, :pid => $2, :tid => $3, :type => $4.to_sym, :start => Float($5) * 1000, :end => Float($6) * 1000}
     options[:desc] = $7 unless $7.empty?
     slice = Slice.new(options)
     if slice.type == :app_controller && slice.desc =~ /(.+) -- (.+)/
       slice.desc = $1
     end
+    slice
   end.compact
 end
 
@@ -67,15 +83,19 @@ slices = parse_file(ARGV[0])
 slices.sort_by!(&:start)
 
 def apply_cuts(slices, cuts)
-  slices.each do |slice|
+  slices.map do |slice|
+    slice = slice.dup
     _start = slice.start
     _end = slice.end
 
     cuts.each do |cut|
+      next if cut.app && cut.app != slice.app
+
       if [slice.start, slice.end].any? { |p| cut.include?(p) }
-        STDERR.puts "Bad cut #{cut} on slice #{slice}"
-        exit 1
+        _start = :remove
       end
+
+      next if cut.app
 
       if slice.start >= cut.end
         _start -= cut.duration
@@ -85,14 +105,17 @@ def apply_cuts(slices, cuts)
       end
     end
 
+    next if _start == :remove
+
     slice.start = _start
     slice.end = _end
-  end
+    slice
+  end.compact
 end
 
 def auto_find_cuts(slices, cuts)
   total_duration = slices.map(&:end).max
-  wanted_total_duration = 3000
+  wanted_total_duration = 400
   min_cut_size = 0.10 * wanted_total_duration
   cut_margin = 0.02 * wanted_total_duration
 
@@ -114,10 +137,10 @@ def auto_find_cuts(slices, cuts)
   end
 end
 
-apply_cuts(slices, [Slice.new(:type => :silent, :start => 0.0, :end => slices.first.start)]) # resets the 0
+slices = apply_cuts(slices, [Slice.new(:type => :silent, :start => 0.0, :end => slices.first.start)]) # resets the 0
 orig_slices = slices.map(&:dup)
 auto_find_cuts(slices, cuts)
-apply_cuts(slices, cuts)
+slices = apply_cuts(slices, cuts)
 cuts = cuts.sort_by(&:start)
 
 def build_tree(slices, parent=nil)
@@ -137,7 +160,7 @@ tree = slices.group_by { |s| "#{s.app}-#{s.thread_id}" }.map { |_, s| build_tree
 def cleanup_tree(tree)
   tree = tree.map do |slice|
     next if slice.type == :publish && slice.desc.nil?
-    next if slice.type == :db_prepare # not counting the prepare phase of the 2PC, it's our overhead
+    # next if slice.type == :db_prepare # not counting the prepare phase of the 2PC, it's our overhead
 
     children = slice.children
     if slice.type == :app_controller || slice.type == :subscribe
@@ -163,8 +186,8 @@ end
 slices = destack_tree(tree).sort_by(&:start)
 
 def print_header(slices)
-  puts "set terminal pdf dashed size 14,2"
-  puts "set output 'gantt_chart.pdf'"
+  puts "set terminal pdf dashed size 6,2"
+  puts "set output '#{$output}'"
 end
 
 def mapping_of(slices, type)
@@ -230,43 +253,44 @@ def print_yaxis(slices)
 end
 
 def print_xaxis(slices, cuts)
+  tic_every = 15
+  cut_display_size = 5
+
   apps = mapping_of(slices, :app_name)
   xmin = slices.map(&:start).min
   xmax = slices.map(&:end).max
 
-  xmax = (xmax.to_i/50+1)*50
+  # xmax = (xmax.to_i/tic_every+1)*tic_every - 10
+  xmax += 5
 
   puts "set xlabel 'Time [ms]' offset 0,-1"
   puts "set xtics font 'Times-Roman,14'"
-  # puts "set xrange [#{xmin}:#{xmax}]"
   puts "set xrange [#{xmin}:#{xmax}]"
   puts "set grid xtics"
 
-  cut_display_size = 10
   xtics = []
 
-  def print_tics(xtics, real_left, real_right, effective_offset)
+  def print_tics(tic_every, xtics, real_left, real_right, effective_offset)
     effective_offset = effective_offset.to_i
-    tic_every = 50
     (real_left.to_i..real_right.to_i).each do |x|
       if (effective_offset+x) % tic_every == 0
-        unless [(x-real_left).abs, (x-real_right).abs].min < 10
+        # unless [(x-real_left).abs, (x-real_right).abs].min < 10
           xtics << "'' #{x}"
           puts "set label '#{effective_offset+x}' at #{x},#{-1.0} center"
-        end
+        # end
       end
     end
   end
 
   if cuts.empty?
-    print_tics(xtics, 0, xmax, 0)
+    print_tics(tic_every, xtics, 0, xmax, 0)
   else
     last_cut = nil
     real_offset = 0
     cut_offset = 0
     last_real_right_cut = 0
 
-    cuts.each do |cut|
+    cuts.reject(&:app).each do |cut|
       if cut.type == :silent
         cut_offset += cut.duration
         next
@@ -276,9 +300,9 @@ def print_xaxis(slices, cuts)
       real_right_cut = real_left_cut + cut_display_size
 
       if last_cut
-        print_tics(xtics, last_real_right_cut, real_left_cut, real_offset)
+        print_tics(tic_every, xtics, last_real_right_cut, real_left_cut, real_offset)
       else
-        print_tics(xtics, 0, cut.start, 0)
+        print_tics(tic_every, xtics, 0, cut.start, 0)
       end
 
       coords1 = "from #{real_left_cut},#{-0.7} to #{real_left_cut},#{apps.count+0.5}"
@@ -295,23 +319,24 @@ def print_xaxis(slices, cuts)
       real_offset += cut.duration
       last_real_right_cut = real_right_cut
     end
-    print_tics(xtics, last_real_right_cut, xmax, real_offset)
+    print_tics(tic_every, xtics, last_real_right_cut, xmax, real_offset)
   end
 
-  puts "set xtics (#{xtics.flatten.join(",")})"
-end
-
+  puts "set xtics (#{xtics.flatten.join(",")})" end 
 def print_key(slices)
   apps = mapping_of(slices, :app_name)
   total_duration = slices.map(&:end).max
 
-  xlow_key = 0.51 * total_duration
+  # xlow_key = 0.51 * total_duration
+  # xhigh_key = 1.05 * total_duration
+
+  xlow_key = 0.02 * total_duration
   xhigh_key = 1.05 * total_duration
 
   ylow_key = apps.count - 0.3
   yhigh_key = apps.count
 
-  coords = "from #{xlow_key},#{ylow_key-0.2} to #{xhigh_key},#{yhigh_key+0.2}"
+  coords = "from #{xlow_key},#{ylow_key-0.2} to #{xhigh_key-10},#{yhigh_key+0.2}"
   puts "set object #{next_rect_id} rect #{coords} front fs solid 0 noborder"
 
   items = {'Application/DB'    => :app,
@@ -331,7 +356,7 @@ def print_key(slices)
     puts "set object #{next_rect_id} rect #{coords} front #{get_slice_style(Slice.new(:type => style))}"
     puts "set label '#{name}' at #{xlabel},#{ylabel} front"
 
-    key_offset += (xhigh_key - xlow_key)/items.size.to_f
+    key_offset += (xhigh_key - xlow_key)/items.size.to_f*0.9
   end
 
   puts "set nokey"
