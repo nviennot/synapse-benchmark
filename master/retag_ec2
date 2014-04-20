@@ -3,5 +3,6 @@ source aws_keys
 
 mkdir -p /tmp/ec2/
 ec2-describe-instances > /tmp/ec2/instances
-ec2-create-tags `cat /tmp/ec2/instances | grep INSTANCE | grep -v 8a07 | grep east-1a  | awk '{print $2}'` -t Role=east-1a
-ec2-create-tags `cat /tmp/ec2/instances | grep INSTANCE | grep -v 8a07 | grep east-1c  | awk '{print $2}'` -t Role=east-1c
+# 5e323a0e is abricot
+ec2-create-tags `cat /tmp/ec2/instances | grep INSTANCE | grep -v 5e323a0e | grep east-1a  | awk '{print $2}'` -t Role=east-1a
+ec2-create-tags `cat /tmp/ec2/instances | grep INSTANCE | grep -v 5e323a0e | grep east-1c  | awk '{print $2}'` -t Role=east-1c

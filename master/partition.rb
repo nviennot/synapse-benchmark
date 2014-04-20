@@ -16,7 +16,7 @@ end
 
 run <<-SCRIPT, "Updating launch.sh", :tag => ENV['ZONE'], :num_workers => counts
   HOST=#{ENV['MASTER_IP']}
-  echo -e "#!/bin/bash\\nabricot listen --redis redis://$HOST/2 --tags #{ENV['ZONE']},`redis-cli -h master lpop roles`" > /srv/abricot/launch.sh
+  echo -e "#!/bin/bash\\nabricot listen --redis redis://$HOST/2 --tags #{ENV['ZONE']},`redis-cli -h $HOST lpop roles`" > /srv/abricot/launch.sh
   service abricot restart
 SCRIPT
 
