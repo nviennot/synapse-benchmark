@@ -7,6 +7,7 @@ require 'optparse'
 
 $force_single_thread = false
 $output = "gantt_chart.pdf"
+include_file = nil
 
 class Slice < Hashie::Mash
   def duration
@@ -64,6 +65,12 @@ OptionParser.new do |opts|
   opts.on("-o", "--output output", "Output PDF file") do |output|
     $output = output
   end
+
+  opts.on("-i", "--include file", "Include a file") do |file|
+    include_file = file
+  end
+
+include_file = nil
 end.parse!
 
 def parse_file(file)
@@ -72,8 +79,14 @@ def parse_file(file)
     options = {:app => $1, :pid => $2, :tid => $3, :type => $4.to_sym, :start => Float($5) * 1000, :end => Float($6) * 1000}
     options[:desc] = $7 unless $7.empty?
     slice = Slice.new(options)
-    if slice.type == :app_controller && slice.desc =~ /(.+) -- (.+)/
+
+    if slice.type == :app_controller && slice.desc =~ /(.+) -- (.+) -- (.+)/
       slice.desc = $1
+      slice.current_user = $2
+    elsif slice.type == :app_controller && slice.desc =~ /(.+) -- (.+)/
+      slice.desc = $1
+    elsif slice.type == :subscribe
+      slice.current_user = MultiJson.load(slice.desc)['current_user_id'].to_s
     end
     slice
   end.compact
@@ -116,6 +129,7 @@ end
 def auto_find_cuts(slices, cuts)
   total_duration = slices.map(&:end).max
   wanted_total_duration = 400
+  wanted_total_duration = ENV['WANTED_DURATION'].to_i if ENV['WANTED_DURATION']
   min_cut_size = 0.10 * wanted_total_duration
   cut_margin = 0.02 * wanted_total_duration
 
@@ -139,7 +153,7 @@ end
 
 slices = apply_cuts(slices, [Slice.new(:type => :silent, :start => 0.0, :end => slices.first.start)]) # resets the 0
 orig_slices = slices.map(&:dup)
-auto_find_cuts(slices, cuts)
+auto_find_cuts(slices, cuts) if cuts.empty?
 slices = apply_cuts(slices, cuts)
 cuts = cuts.sort_by(&:start)
 
@@ -198,11 +212,26 @@ def mapping_of(slices, type)
   ]
 end
 
+$user_style = {}
 def get_slice_style(slice)
-  case slice.type
-  when :publish   then "fc ls 4 fs pattern 2 bo -1"
-  when :subscribe then "fc ls 3 fs pattern 6 bo -1"
-  else ""
+  if ENV['SHOW_USERS']
+    # For the key of the extra style
+    if slice.type == :disconnect
+      return "fc ls 1 fs pattern 5 bo -1"
+    end
+
+    styles = ["fc ls 4 fs pattern 7 bo -1",
+              "fc ls 3 fs pattern 6 bo -1"]
+    return "" unless slice.current_user
+    $user_style[slice.current_user] ||= styles[$user_style.size]
+  else
+    styles = ["fc ls 4 fs pattern 2 bo -1",
+              "fc ls 3 fs pattern 6 bo -1"]
+    case slice.type
+    when :publish   then styles[0]
+    when :subscribe then styles[1]
+    else ""
+    end
   end
 end
 
@@ -212,6 +241,10 @@ def next_rect_id
 end
 
 def print_slices(slices)
+  if ENV['SHOW_USERS']
+    slices = slices.select { |s| s.type == :app_controller || s.type == :subscribe }
+  end
+
   apps = mapping_of(slices, :app)
   num_threads = apps.values.map(&:size).max
 
@@ -235,12 +268,13 @@ end
 def print_yaxis(slices)
   apps = mapping_of(slices, :app_name)
 
-  puts "set ytics font 'Times-Roman,14'"
+  puts "set ytics axis nomirror font 'Times-Roman,14'"
   puts "set yrange [-0.5:#{apps.count + 0.3}]"
+  puts "set mytics 0.1"
 
   ytics = apps.each_with_index.map do |at, i|
     app, threads = at
-    if threads.size == 1
+    if threads.size == 1 || ENV['ANNOTATE_THREADS'] == '0'
       "'#{app}' #{i}"
     else
       threads.each_with_index.map do |t,j|
@@ -254,36 +288,40 @@ end
 
 def print_xaxis(slices, cuts)
   tic_every = 15
+  tic_every = ENV['XTICS'].to_i if ENV['XTICS']
   cut_display_size = 5
+
+  has_visual_cut = cuts.any? { |c| c.type == :visual }
 
   apps = mapping_of(slices, :app_name)
   xmin = slices.map(&:start).min
   xmax = slices.map(&:end).max
 
   # xmax = (xmax.to_i/tic_every+1)*tic_every - 10
-  xmax += 5
+  xmax *= 1.01
 
-  puts "set xlabel 'Time [ms]' offset 0,-1"
+  puts "set xlabel 'Time [ms]'"
   puts "set xtics font 'Times-Roman,14'"
   puts "set xrange [#{xmin}:#{xmax}]"
   puts "set grid xtics"
 
   xtics = []
 
-  def print_tics(tic_every, xtics, real_left, real_right, effective_offset)
+  def print_tics(has_visual_cut, tic_every, xtics, real_left, real_right, effective_offset)
     effective_offset = effective_offset.to_i
     (real_left.to_i..real_right.to_i).each do |x|
       if (effective_offset+x) % tic_every == 0
         # unless [(x-real_left).abs, (x-real_right).abs].min < 10
           xtics << "'' #{x}"
-          puts "set label '#{effective_offset+x}' at #{x},#{-1.0} center"
+          y = has_visual_cut ? -1.0 : -0.7
+          puts "set label '#{effective_offset+x}' at #{x},#{y} center"
         # end
       end
     end
   end
 
   if cuts.empty?
-    print_tics(tic_every, xtics, 0, xmax, 0)
+    print_tics(has_visual_cut, tic_every, xtics, 0, xmax, 0)
   else
     last_cut = nil
     real_offset = 0
@@ -300,9 +338,9 @@ def print_xaxis(slices, cuts)
       real_right_cut = real_left_cut + cut_display_size
 
       if last_cut
-        print_tics(tic_every, xtics, last_real_right_cut, real_left_cut, real_offset)
+        print_tics(has_visual_cut, tic_every, xtics, last_real_right_cut, real_left_cut, real_offset)
       else
-        print_tics(tic_every, xtics, 0, cut.start, 0)
+        print_tics(has_visual_cut, tic_every, xtics, 0, cut.start, 0)
       end
 
       coords1 = "from #{real_left_cut},#{-0.7} to #{real_left_cut},#{apps.count+0.5}"
@@ -319,10 +357,12 @@ def print_xaxis(slices, cuts)
       real_offset += cut.duration
       last_real_right_cut = real_right_cut
     end
-    print_tics(tic_every, xtics, last_real_right_cut, xmax, real_offset)
+    print_tics(has_visual_cut, tic_every, xtics, last_real_right_cut, xmax, real_offset)
   end
 
-  puts "set xtics (#{xtics.flatten.join(",")})" end 
+  puts "set xtics (#{xtics.flatten.join(",")})"
+end
+
 def print_key(slices)
   apps = mapping_of(slices, :app_name)
   total_duration = slices.map(&:end).max
@@ -331,7 +371,13 @@ def print_key(slices)
   # xhigh_key = 1.05 * total_duration
 
   xlow_key = 0.02 * total_duration
-  xhigh_key = 1.05 * total_duration
+
+  if ENV['SHOW_USERS']
+    # xhigh_key = 0.4 * total_duration
+    xhigh_key = 0.93 * total_duration
+  else
+    xhigh_key = 1.05 * total_duration
+  end
 
   ylow_key = apps.count - 0.3
   yhigh_key = apps.count
@@ -339,9 +385,16 @@ def print_key(slices)
   coords = "from #{xlow_key},#{ylow_key-0.2} to #{xhigh_key-10},#{yhigh_key+0.2}"
   puts "set object #{next_rect_id} rect #{coords} front fs solid 0 noborder"
 
-  items = {'Application/DB'    => :app,
-           'Synapse publish'   => :publish,
-           'Synapse subscribe' => :subscribe}
+  items = {'Application/DB'    => {:type => :app},
+           'Synapse publish'   => {:type => :publish},
+           'Synapse subscribe' => {:type => :subscribe}}
+
+  if ENV['SHOW_USERS']
+    items = {'User 1 context' => {:current_user => $user_style.keys[0]},
+             'User 2 context' => {:current_user => $user_style.keys[1]},
+             'Disconnected'   => {:type         => :disconnect }}
+  end
+
   key_offset = xlow_key
   items.each do |name, style|
     xlow = key_offset
@@ -353,13 +406,17 @@ def print_key(slices)
     ylabel = ylow + (yhigh - ylow)*0.5
 
     coords = "from #{xlow},#{ylow} to #{xhigh},#{yhigh}"
-    puts "set object #{next_rect_id} rect #{coords} front #{get_slice_style(Slice.new(:type => style))}"
+    puts "set object #{next_rect_id} rect #{coords} front #{get_slice_style(Slice.new(style))}"
     puts "set label '#{name}' at #{xlabel},#{ylabel} front"
 
     key_offset += (xhigh_key - xlow_key)/items.size.to_f*0.9
   end
 
   puts "set nokey"
+end
+
+def print_finalize(include_file)
+  puts File.open(include_file).read if include_file
   puts "plot -5"
 end
 
@@ -368,6 +425,7 @@ print_slices(slices)
 print_yaxis(slices)
 print_xaxis(slices, cuts)
 print_key(slices)
+print_finalize(include_file)
 
 (cuts + slices + orig_slices).each { |s| s.start = s.start.round(0); s.end = s.end.round(0) }
 AwesomePrint.force_colors = true
