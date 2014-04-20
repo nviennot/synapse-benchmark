@@ -25,7 +25,7 @@ class Slice < Hashie::Mash
   def app_name
     case app
     when 'diaspora'       then 'Diaspora'
-    when 'diaspora_topic' then 'Semantic analyser'
+    when 'diaspora_topic' then 'Semantic\nanalyser'
     when 'diaspora_email' then 'Mailer'
     when 'spree_app'      then 'Spree'
     else app
@@ -200,7 +200,10 @@ end
 slices = destack_tree(tree).sort_by(&:start)
 
 def print_header(slices)
-  puts "set terminal pdf dashed size 6,2"
+  puts "set terminal pdf dashed size 6.5,2 font 'Times-Roman,16'"
+  puts "set tmargin at screen 0.99"
+  puts "set lmargin at screen 0.115"
+  puts "set rmargin at screen 0.99"
   puts "set output '#{$output}'"
 end
 
@@ -268,14 +271,14 @@ end
 def print_yaxis(slices)
   apps = mapping_of(slices, :app_name)
 
-  puts "set ytics axis nomirror font 'Times-Roman,14'"
+  puts "set ytics axis nomirror rotate by 45 offset 0,0.2"
   puts "set yrange [-0.5:#{apps.count + 0.3}]"
   puts "set mytics 0.1"
 
   ytics = apps.each_with_index.map do |at, i|
     app, threads = at
     if threads.size == 1 || ENV['ANNOTATE_THREADS'] == '0'
-      "'#{app}' #{i}"
+      "\"#{app}\" #{i}"
     else
       threads.each_with_index.map do |t,j|
         tname = {1 => 'web frontend', 0 => 'background worker'}[j]
@@ -289,7 +292,7 @@ end
 def print_xaxis(slices, cuts)
   tic_every = 15
   tic_every = ENV['XTICS'].to_i if ENV['XTICS']
-  cut_display_size = 5
+  cut_display_size = 3
 
   has_visual_cut = cuts.any? { |c| c.type == :visual }
 
@@ -300,8 +303,7 @@ def print_xaxis(slices, cuts)
   # xmax = (xmax.to_i/tic_every+1)*tic_every - 10
   xmax *= 1.01
 
-  puts "set xlabel 'Time [ms]'"
-  puts "set xtics font 'Times-Roman,14'"
+  puts "set xlabel 'Time [ms]' offset 0,+0.75"
   puts "set xrange [#{xmin}:#{xmax}]"
   puts "set grid xtics"
 
@@ -374,7 +376,7 @@ def print_key(slices)
 
   if ENV['SHOW_USERS']
     # xhigh_key = 0.4 * total_duration
-    xhigh_key = 0.93 * total_duration
+    xhigh_key = 0.94 * total_duration
   else
     xhigh_key = 1.05 * total_duration
   end
@@ -409,7 +411,7 @@ def print_key(slices)
     puts "set object #{next_rect_id} rect #{coords} front #{get_slice_style(Slice.new(style))}"
     puts "set label '#{name}' at #{xlabel},#{ylabel} front"
 
-    key_offset += (xhigh_key - xlow_key)/items.size.to_f*0.9
+    key_offset += (xhigh_key - xlow_key)/items.size.to_f*0.95
   end
 
   puts "set nokey"
