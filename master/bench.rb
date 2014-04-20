@@ -265,17 +265,17 @@ begin
   # update_app
 
   options = {
-    :num_users => 1000,
-    :sub_latency => ["0.010", "0.100", "1.000"],
-    :num_workers => [1, 2, 5, 10, 20, 50, 100, 200, 350].reverse,
-    :num_redis => 100,
-    #:num_read_deps => [1,2,5,10,20,50,100,200,500,1000],
+    :num_users => [1, 10, 100].reverse,
+    :sub_latency => "0.100",
+    :num_workers => [1, 2, 5, 10, 20, 50, 100].reverse,
+    :num_redis => 10,
+    :num_read_deps => 0,
     :hash_size => 0,
     # :num_workers => 100,
 
     #:pub_latency => "0.002",
-    :cleanup_interval => 10,
-    :queue_max_age => 50,
+    :cleanup_interval => 100,
+    :queue_max_age => 1000,
     :prefetch => 100,
 
     :max_num_friends => 500,

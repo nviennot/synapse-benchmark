@@ -29,6 +29,7 @@ File.open('throughput-vs-workers.dat', 'w') do |f|
 end
 
 `gnuplot throughput-vs-workers.plot`
+`gnuplot throughput-vs-workers-saturate.plot`
 
 File.open('overhead-vs-deps.dat', 'w') do |f|
   overhead.each do |workers, ur|
