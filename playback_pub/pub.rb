@@ -72,7 +72,7 @@ def create_comment(user_id)
   friend.read
 
   current_user = User.new(:id => user_id)
-  current_user.read
+  Promiscuous::Publisher::Context.current.current_user = current_user
 
   pid = friend.node.get("pub:#{friend_id}:latest_post_id").to_i
   post_id = "#{friend_id}_#{pid}"
