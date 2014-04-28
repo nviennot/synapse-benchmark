@@ -8,7 +8,7 @@ GIT
 
 GIT
   remote: https://github.com/nviennot/promiscuous.git
-  revision: 67e7a058059b40b080b5efd26b4f020c2b122071
+  revision: 4c8e6fe4614311820bcb5a192c1fb379daeae49d
   branch: master
   specs:
     promiscuous (0.91.0)
@@ -28,6 +28,10 @@ GEM
     activemodel (4.1.0)
       activesupport (= 4.1.0)
       builder (~> 3.1)
+    activerecord (4.1.0)
+      activemodel (= 4.1.0)
+      activesupport (= 4.1.0)
+      arel (~> 5.0.0)
     activesupport (4.1.0)
       i18n (~> 0.6, >= 0.6.9)
       json (~> 1.7, >= 1.7.7)
@@ -37,16 +41,36 @@ GEM
     algorithms (0.6.1)
     algorithms (0.6.1-java)
     amq-protocol (1.9.2)
+    arel (5.0.1.20140414130214)
+    bson (1.10.0)
+    bson (1.10.0-java)
     builder (3.2.2)
+    cequel (1.2.4)
+      activemodel (>= 3.1, < 5.0)
+      cql-rb (~> 1.2)
     coderay (1.1.0)
+    cql-rb (1.2.1)
+    durran-validatable (2.0.1)
     ffi (1.9.3-java)
     fnv (0.2.0)
     i18n (0.6.9)
     json (1.8.1)
     json (1.8.1-java)
+    leshill-will_paginate (2.3.11)
     method_source (0.8.2)
     minitest (5.3.3)
+    mongo (1.10.0)
+      bson (~> 1.10.0)
+    mongo (1.10.0-java)
+      bson (~> 1.10.0)
+    mongoid (1.0.6)
+      activesupport (>= 2.2.2)
+      durran-validatable (>= 2.0.1)
+      leshill-will_paginate (>= 2.3.11)
+      mongo (>= 0.18.2)
     multi_json (1.8.4)
+    mysql2 (0.3.15)
+    pg (0.17.1)
     pry (0.9.12.6)
       coderay (~> 1.0)
       method_source (~> 0.8)
@@ -72,7 +96,12 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  activerecord
   bunny!
+  cequel
+  mongoid
+  mysql2
+  pg
   promiscuous!
   pry
   zipfian
