@@ -5,8 +5,10 @@ gem 'promiscuous', :git => 'https://github.com/nviennot/promiscuous.git', :branc
 gem 'zipfian'
 gem 'bunny', :git => 'https://github.com/nviennot/bunny.git', :branch => 'master'
 
+platform :ruby do
 gem 'activerecord', :require => false
-gem 'pg', :require => false
-gem 'mysql2', :require => false
-gem 'cequel', :require => false
-gem 'mongoid', :require => false
+gem 'pg',           :require => false
+gem 'mysql2',       :require => false
+gem 'cequel',       :require => false
+gem 'mongoid',     '~> 3.1', :require => false
+end

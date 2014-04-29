@@ -2,6 +2,8 @@ require 'bundler'
 require 'redis'
 Bundler.require
 
+load './models.rb'
+
 $master = Redis.new(:url => 'redis://master/')
 $worker_index = ENV['WORKER_INDEX'].to_i
 
@@ -134,20 +136,13 @@ def bootstrap(type)
   end
   Promiscuous::Config.logger.level = ENV['LOGGER_LEVEL'].to_i
 
+  Model.definitions.load_models(type)
 end
 
 def add_instrumentation(type)
   case type
   when :pub
-    $msg_count_bench = Stats::Counter.new('pub_msg')
-    Promiscuous::Publisher::Operation::Ephemeral.class_eval do
-      def execute
-        super do
-          $msg_count_bench.inc
-          sleep ENV['PUB_LATENCY'].to_f if ENV['PUB_LATENCY']
-        end
-      end
-    end
+    # nope
   when :sub
     $msg_count_bench = Stats::Counter.new('sub_msg')
     Promiscuous::Subscriber::Model.mapping.values.map(&:values)

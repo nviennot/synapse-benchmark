@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 load 'common.rb'
+
 bootstrap(:pub)
 
 def generate_users
@@ -39,29 +40,24 @@ class User
   end
 end
 
-class Post
-  include Promiscuous::Publisher::Model::Ephemeral
-  publish :user_id
-  # track_dependencies_of :user_id
-end
-
-class Comment
-  include Promiscuous::Publisher::Model::Ephemeral
-  publish :user_id
-  publish :post_id
-end
-
 $overhead_stat = Stats::Average.new('pub_overhead')
+$msg_count_bench = Stats::Counter.new('pub_msg')
 
 def create_post(user_id)
   current_user = User.new(:id => user_id)
   current_user.read
 
+  post = Post.new(:author_id => user_id, :content => 'hello world')
+  if post.is_a?(Promiscuous::Publisher::Model::Ephemeral)
+    post.id = "#{user_id}-#{current_user.node.incr("pub:#{user_id}:latest_post_id")}"
+  end
 
-  pid = current_user.node.incr("pub:#{user_id}:latest_post_id")
-  post_id = "#{user_id}_#{pid}"
-  post = Post.new(:id => post_id, :user_id => user_id)
   $overhead_stat.measure { post.save }
+  $msg_count_bench.inc
+
+  unless post.is_a?(Promiscuous::Publisher::Model::Ephemeral)
+    current_user.node.set("pub:#{user_id}:latest_post_id", post.id)
+  end
 end
 
 def create_comment(user_id)
@@ -74,15 +70,21 @@ def create_comment(user_id)
   current_user = User.new(:id => user_id)
   Promiscuous::Publisher::Context.current.current_user = current_user
 
-  pid = friend.node.get("pub:#{friend_id}:latest_post_id").to_i
-  post_id = "#{friend_id}_#{pid}"
-  post = Post.new(:id => post_id, :user_id => friend_id)
-  post.read
+  post_id = friend.node.get("pub:#{friend_id}:latest_post_id")
+  post = Post.new(:id => post_id)
 
-  comment = Comment.new(:id => "#{post_id}_#{rand(1..2**4)}",
-                        :user_id => friend_id,
-                        :post_id => post_id)
+  op = Promiscuous::Publisher::Operation::NonPersistent
+         .new(:instances => [post], :operation => :read)
+  Promiscuous::Publisher::Context.current.read_operations << op
+
+  comment = Comment.new(:author_id => user_id, :post_id => post_id, :content => 'hello world')
+
+  if comment.is_a?(Promiscuous::Publisher::Model::Ephemeral)
+    comment.id = "#{user_id}-#{friend_id}-#{post_id}"
+  end
+
   $overhead_stat.measure { comment.save }
+  $msg_count_bench.inc
 end
 
 def publish

@@ -3,6 +3,20 @@ require './boot'
 
 class Deadlock < RuntimeError; end
 
+def prepare_database(options={})
+  run <<-SCRIPT, "Prepping database (pub)", :tag => :pub, :num_workers => 1
+    export DB=#{options[:pub_db]}
+    cd /srv/promiscuous-benchmark/playback_pub
+    #{ruby_exec "./prepare_pub.rb"}
+  SCRIPT
+
+  run <<-SCRIPT, "Prepping database (sub)", :tag => :sub, :num_workers => 1
+    export DB=#{options[:sub_db]}
+    cd /srv/promiscuous-benchmark/playback_sub
+    #{ruby_exec "./prepare_sub.rb"}
+  SCRIPT
+end
+
 def update_app
   run <<-SCRIPT, "app git pull"
     cd /srv/promiscuous-benchmark/playback_pub &&
@@ -35,6 +49,7 @@ def run_publisher(options={})
   run <<-SCRIPT, "Running publishers", options.merge(:tag => :pub)
     cd /srv/promiscuous-benchmark/playback_pub
 
+    export DB=#{options[:pub_db]}
     export MAX_NUM_FRIENDS=#{options[:max_num_friends]}
     export COEFF_NUM_FRIENDS=#{options[:coeff_num_friends]}
     export NUM_USERS=#{options[:num_users]}
@@ -43,15 +58,17 @@ def run_publisher(options={})
     #{"export EVAL='#{[options[:pub_eval]].to_json}'" if options[:pub_eval]}
     #{"export NUM_REDIS=#{options[:num_pub_redis]}" if options[:num_pub_redis]}
     #{"export PUB_LATENCY=#{options[:pub_latency]}" if options[:pub_latency]}
-    #{"export NUM_READ_DEPS=#{options[:num_read_deps]-1}" if options[:num_read_deps]}
-    #{ruby_exec(options[:num_read_deps] ? "./pub_dep.rb" : "./pub.rb")}
+    #{"export NUM_READ_DEPS=#{options[:num_read_deps]}" if options[:num_read_deps]}
+    #{ruby_exec "./pub.rb"}
   SCRIPT
+    # #{ruby_exec(options[:num_read_deps] ? "./pub_dep.rb" : "./pub.rb")}
 end
 
 def run_subscriber(options={})
   run <<-SCRIPT, "Running subscribers", options.merge(:tag => :sub)
     cd /srv/promiscuous-benchmark/playback_sub
 
+    export DB=#{options[:sub_db]}
     export CLEANUP_INTERVAL=#{options[:cleanup_interval]}
     export QUEUE_MAX_AGE=#{options[:queue_max_age]}
     export PREFETCH=#{options[:prefetch]}
@@ -74,6 +91,7 @@ def run_benchmark(options={})
   @abricot.multi do
     clean_rabbitmq
     register_redis_ips(options)
+    prepare_database(options)
   end
 
   jobs = @abricot.multi :async => true do
@@ -184,11 +202,12 @@ def measure_stats(jobs, options={})
     pub_rate.sample
     sub_rate.sample
 
-    if sub_rate.samples.size >= 5 && sub_rate.samples[-5..-1].all? { |r| r.zero? }
+    rate = options[:num_read_deps] == :native ? pub_rate : sub_rate
+    if rate.samples.size >= 5 && rate.samples[-5..-1].all? { |r| r.zero? }
       raise Deadlock
     end
 
-    if sub_rate.finished?
+    if rate.finished?
       STDERR.puts "-" * 80
       return sub_rate.average, pub_overhead.average
     end
@@ -196,7 +215,7 @@ def measure_stats(jobs, options={})
 end
 
 def benchmark_once(variables, options={})
-  num_tries = 30
+  num_tries = 1
   tries = num_tries
 
   options = options.dup
@@ -265,11 +284,13 @@ begin
   # update_app
 
   options = {
-    :num_users => [1, 10, 100].reverse,
-    :sub_latency => "0.100",
-    :num_workers => [1, 2, 5, 10, 20, 50, 100].reverse,
-    :num_redis => 10,
-    :num_read_deps => 0,
+    :pub_db => :mongodb,
+    :sub_db => :mysql,
+    :num_users => 100,
+    # :sub_latency => 0,
+    :num_workers => 1,
+    :num_redis => 1,
+    :num_read_deps => :native,
     :hash_size => 0,
     # :num_workers => 100,
 
