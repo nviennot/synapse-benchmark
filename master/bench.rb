@@ -3,16 +3,31 @@ require './boot'
 
 class Deadlock < RuntimeError; end
 
+def get_server_ip(type)
+  case type.to_sym
+  when :nodb       then 'localhost'
+  when :mongodb    then '23.20.168.155'
+  when :mysql      then '23.20.168.155'
+  when :postgres   then '23.20.168.155'
+  when :cassandra  then '23.20.168.155'
+  when :es         then '23.20.168.155'
+  when :rethinkdb  then '23.20.168.155'
+  when :neo4j      then '23.20.168.155'
+  end
+end
+
 def prepare_database(options={})
-  gemfile = options[:pub_db].to_s == 'mongodb' ? "./Gemfile.mongoid" : nil
+  gemfile = %w(mongodb tokumx).include?(options[:pub_db]) ? "./Gemfile.mongoid" : nil
   run <<-SCRIPT, "Prepping database (pub)", :tag => :pub, :num_workers => 1
+    export DB_SERVER=#{get_server_ip(options[:pub_db])}
     export DB=#{options[:pub_db]}
     cd /srv/promiscuous-benchmark/playback_pub
     #{ruby_exec "./prepare_pub.rb", gemfile}
   SCRIPT
 
-  gemfile = options[:sub_db].to_s == 'mongodb' ? "./Gemfile.mongoid" : nil
+  gemfile = %w(mongodb tokumx).include?(options[:sub_db]) ? "./Gemfile.mongoid" : nil
   run <<-SCRIPT, "Prepping database (sub)", :tag => :sub, :num_workers => 1
+    export DB_SERVER=#{get_server_ip(options[:sub_db])}
     export DB=#{options[:sub_db]}
     cd /srv/promiscuous-benchmark/playback_sub
     #{ruby_exec "./prepare_sub.rb", gemfile}
@@ -48,10 +63,11 @@ def clean_rabbitmq
 end
 
 def run_publisher(options={})
-  gemfile = "./Gemfile.mongoid" if options[:pub_db].to_s == 'mongodb'
+  gemfile = %w(mongodb tokumx).include?(options[:pub_db]) ? "./Gemfile.mongoid" : nil
   run <<-SCRIPT, "Running publishers", options.merge(:tag => :pub)
     cd /srv/promiscuous-benchmark/playback_pub
 
+    export DB_SERVER=#{get_server_ip(options[:pub_db])}
     export DB=#{options[:pub_db]}
     export MAX_NUM_FRIENDS=#{options[:max_num_friends]}
     export COEFF_NUM_FRIENDS=#{options[:coeff_num_friends]}
@@ -68,10 +84,11 @@ def run_publisher(options={})
 end
 
 def run_subscriber(options={})
-  gemfile = "./Gemfile.mongoid" if options[:sub_db].to_s == 'mongodb'
+  gemfile = %w(mongodb tokumx).include?(options[:sub_db]) ? "./Gemfile.mongoid" : nil
   run <<-SCRIPT, "Running subscribers", options.merge(:tag => :sub)
     cd /srv/promiscuous-benchmark/playback_sub
 
+    export DB_SERVER=#{get_server_ip(options[:sub_db])}
     export DB=#{options[:sub_db]}
     export CLEANUP_INTERVAL=#{options[:cleanup_interval]}
     export QUEUE_MAX_AGE=#{options[:queue_max_age]}
@@ -88,6 +105,8 @@ end
 
 def run_benchmark(options={})
   STDERR.puts "Launching with #{options}"
+
+  options[:pub_db], options[:sub_db] = options[:dbs].split('->')
 
   kill_all
   @master.flushdb
@@ -288,9 +307,9 @@ begin
   # update_app
 
   options = {
-    :pub_db => :mongodb,
-    :sub_db => :neo4j,
-    :num_users => 100,
+    # :dbs => %w(mysql->neo4j cassandra->es tokumx->postgres mongodb->rethinkdb nodb->nodb),
+    :dbs => %w(nodb->rethinkdb),
+    :num_users => 10000,
     # :sub_latency => 0,
     :num_workers => 1,
     :num_redis => 1,

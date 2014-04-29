@@ -1,5 +1,7 @@
 require 'promiscuous'
 
+raise "DB_SERVER not specified" unless ENV['DB_SERVER']
+
 module Model
   extend self
   CLASS_NAMES = %w(Post Comment)
@@ -14,6 +16,7 @@ module Model
     when 'es'        then Model::ES
     when 'rethinkdb' then Model::RethinkDB
     when 'neo4j'     then Model::Neo4j
+    when 'tokumx'    then Model::MongoDB
     end
   end
 end
@@ -139,18 +142,20 @@ module Model::MySQL
 
   def db_settings
     {
+      :host     => ENV['DB_SERVER'],
       :adapter  => "mysql2",
       :database => "promiscuous",
-      :username => "root",
+      :username => "benchmark",
       :password => "pafpaf",
       :encoding => "utf8",
-      :pool => 20,
+      :pool => 1,
     }
   end
 
   def connect
     require 'active_record'
     require 'mysql2'
+    STDERR.puts ENV['DB_SERVER']
     ActiveRecord::Base.establish_connection(db_settings)
   end
 
@@ -173,12 +178,13 @@ module Model::Postgres
 
   def db_settings
     {
+      :host     => ENV['DB_SERVER'],
       :adapter  => "postgresql",
       :database => "promiscuous",
       :username => "postgres",
       :password => nil,
       :encoding => "utf8",
-      :pool => 20,
+      :pool => 1,
     }
   end
 
@@ -211,7 +217,15 @@ module Model::MongoDB
   def connect
     require 'mongoid'
     Mongoid.configure do |config|
-      config.connect_to('benchmark', :safe => true)
+      config.load_configuration({
+        sessions: {
+          default: {
+            database: 'benchmark',
+            hosts: [ "#{ENV['DB_SERVER']}:27017" ],
+            options: { safe: true }
+          }
+        }
+      })
     end
   end
 
@@ -256,7 +270,7 @@ module Model::Cassandra
 
   def connect
     require 'cequel'
-    connection = Cequel.connect(:host => 'localhost', :keyspace => 'benchmark')
+    connection = Cequel.connect(:host => ENV['DB_SERVER'], :keyspace => 'benchmark')
     Cequel::Record.connection = connection
   end
 
@@ -303,7 +317,7 @@ module Model::ES
   def connect
     require './es'
 
-    ENV['ELASTICSEARCH_URL'] = 'http://127.0.0.1:9200/'
+    ENV['ELASTICSEARCH_URL'] = "http://#{ENV['DB_SERVER']}:9200/"
     ::ES.server
   end
 
@@ -366,7 +380,7 @@ module Model::RethinkDB
     require 'nobrainer'
     ENV['RETHINKDB_DB'] = 'benchmark'
     NoBrainer.configure do |c|
-      c.rethinkdb_url = 'rethinkdb://127.0.0.1/benchmark'
+      c.rethinkdb_url = "rethinkdb://#{ENV['DB_SERVER']}/benchmark"
       c.logger = Logger.new(STDERR).tap { |l| l.level = ENV['LOGGER_LEVEL'].to_i }
     end
   end
@@ -414,7 +428,7 @@ module Model::Neo4j
 
   def connect
     require 'neo4j'
-    Neo4j::Session.open(:server_db, "http://localhost:7474")
+    Neo4j::Session.open(:server_db, "http://#{ENV['DB_SERVER']}:7474")
   end
 
   def do_migration(type)
