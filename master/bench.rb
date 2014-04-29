@@ -303,13 +303,12 @@ begin
   # update_app
 
   options = {
-    # :dbs => %w(nodb->nodb mysql->neo4j cassandra->es postgres->tokumx mongodb->rethinkdb),
+    :dbs => %w(nodb->nodb),
     # :dbs => %w(nodb->rethinkdb),
-    :dbs => %w(mongodb->nodb mysql->nodb cassandra->nodb postgres->nodb tokumx->nodb),
     :num_users => 1000,
     # :sub_latency => 0,
-    :num_workers => 5,
-    :num_redis => 1,
+    :num_workers => [1,2,5,10,20,50,100,200,400].reverse,
+    :num_redis => 80,
     # :num_read_deps => :native,
     :hash_size => 0,
     # :num_workers => 100,

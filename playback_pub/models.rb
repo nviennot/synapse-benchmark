@@ -1,6 +1,7 @@
 require 'promiscuous'
 
 raise "DB_SERVER not specified" unless ENV['DB_SERVER']
+ENV['DB_SERVER'] = ENV['DB_SERVER'].split(',').sample
 
 module Model
   extend self
