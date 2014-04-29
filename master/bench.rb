@@ -310,11 +310,10 @@ begin
 
   options = {
     # :dbs => %w(mysql->neo4j cassandra->es tokumx->postgres mongodb->rethinkdb nodb->nodb),
-    :dbs => %w(cassandra->es),
-    # :dbs => %w(nodb->rethinkdb),
+    :dbs => %w(tokumx->postgres),
     :num_users => 1000,
     # :sub_latency => 0,
-    :num_workers => [400],
+    :num_workers => [50, 100, 200, 400],
     :num_redis => 80,
     # :num_read_deps => :native,
     :hash_size => 0,

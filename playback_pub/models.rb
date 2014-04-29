@@ -112,15 +112,18 @@ module Model::ActiveRecord
         def change
           create_table :posts #{type == :sub ? ', :id => false' : ''}, :force => true do |t|
             t.string :id, :limit => 40 if #{type == :sub}
-            t.integer :author_id
+            t.integer :author_id if #{type == :pub}
+            t.string :author_id if #{type == :sub}
             t.string :content
           end
           add_index(:posts, :author_id)
 
           create_table :comments #{type == :sub ? ', :id => false' : ''}, :force => true do |t|
             t.string :id, :limit => 40 if #{type == :sub}
-            t.integer :author_id
-            t.integer :post_id
+            t.integer :author_id if #{type == :pub}
+            t.integer :post_id if #{type == :pub}
+            t.string :author_id if #{type == :sub}
+            t.string :post_id if #{type == :sub}
             t.string :content
           end
           add_index(:comments, :author_id)
