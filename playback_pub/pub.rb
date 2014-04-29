@@ -80,7 +80,7 @@ def create_comment(user_id)
   comment = Comment.new(:author_id => user_id, :post_id => post_id, :content => 'hello world')
 
   if comment.is_a?(Promiscuous::Publisher::Model::Ephemeral)
-    comment.id = "#{user_id}-#{friend_id}-#{post_id}"
+    comment.id = rand(1..2**30)
   end
 
   $overhead_stat.measure { comment.save }

@@ -133,8 +133,8 @@ def bootstrap(type)
                           .take(ENV['NUM_REDIS'].to_i)
                           .map { |r| "redis://#{r}/" }
     config.error_notifier = proc { exit 1 }
+    config.logger = Logger.new(STDERR).tap { |l| l.level = ENV['LOGGER_LEVEL'].to_i }
   end
-  Promiscuous::Config.logger.level = ENV['LOGGER_LEVEL'].to_i
 
   Model.definitions.load_models(type)
 end
@@ -145,11 +145,12 @@ def add_instrumentation(type)
     # nope
   when :sub
     $msg_count_bench = Stats::Counter.new('sub_msg')
-    Promiscuous::Subscriber::Model.mapping.values.map(&:values)
-                  .flatten.map { |m| m[:model] }.uniq.each do |klass|
-      klass.after_save do
+    Promiscuous::Subscriber::Operation::Regular.class_eval do
+      alias_method :execute_orig, :execute
+      def execute
         $msg_count_bench.inc
         sleep ENV['SUB_LATENCY'].to_f if ENV['SUB_LATENCY']
+        execute_orig
       end
     end
   end

@@ -6,9 +6,15 @@ gem 'zipfian'
 gem 'bunny', :git => 'https://github.com/nviennot/bunny.git', :branch => 'master'
 
 platform :ruby do
-gem 'activerecord', :require => false
-gem 'pg',           :require => false
-gem 'mysql2',       :require => false
-gem 'cequel',       :require => false
-gem 'mongoid',     '~> 3.1', :require => false
+  gem 'activerecord',           :require => false
+  gem 'pg',                     :require => false
+  gem 'mysql2',                 :require => false
+  gem 'cequel',                 :require => false
+  gem 'neo4j', '3.0.0.alpha.6', :require => false
+
+  gem 'stretcher',              :require => false
+  gem 'faraday', '~> 0.8.0',    :require => false
+  gem 'faraday_middleware',     :require => false
+
+  gem 'nobrainer', :require => false, :github => 'nviennot/nobrainer', :ref => '49fdd1f1e1f3f16'
 end

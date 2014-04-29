@@ -11,6 +11,8 @@ module Model
     when 'postgres'  then Model::Postgres
     when 'mongodb'   then Model::MongoDB
     when 'cassandra' then Model::Cassandra
+    when 'es'        then Model::ES
+    when 'rethinkdb' then Model::RethinkDB
     end
   end
 end
@@ -22,9 +24,9 @@ module Model::Base
   def load_models(type)
     connect
 
-    define_models       if defined?(define_models)
-    define_associations if defined?(define_associations)
-    define_attributes   if defined?(define_attributes)
+    define_models           if defined?(define_models)
+    define_associations     if defined?(define_associations)
+    define_attributes(type) if defined?(define_attributes)
 
     unless ENV['NUM_READ_DEPS'] == 'native'
       case type
@@ -105,7 +107,6 @@ module Model::ActiveRecord
         def change
           create_table :posts #{type == :sub ? ', :id => false' : ''}, :force => true do |t|
             t.string :id, :limit => 40 if #{type == :sub}
-            t.timestamps
             t.integer :author_id
             t.string :content
           end
@@ -113,7 +114,6 @@ module Model::ActiveRecord
 
           create_table :comments #{type == :sub ? ', :id => false' : ''}, :force => true do |t|
             t.string :id, :limit => 40 if #{type == :sub}
-            t.timestamps
             t.integer :author_id
             t.integer :post_id
             t.string :content
@@ -225,17 +225,11 @@ module Model::MongoDB
     Model::CLASS_NAMES.each do |model|
       eval "class ::#{model}
         include Mongoid::Document
-        include Mongoid::Timestamps
       end"
     end
   end
 
-  def define_attributes
-    # User.class_eval do
-      # field :name
-    # end
-    # Friendship.class_eval do
-    # end
+  def define_attributes(type)
     Post.class_eval do
       field :content
       field :author_id
@@ -262,7 +256,6 @@ module Model::Cassandra
   def connect
     require 'cequel'
     connection = Cequel.connect(:host => 'localhost', :keyspace => 'benchmark')
-    connection.logger = Logger.new(STDOUT).tap { |l| l.level = 0 }
     Cequel::Record.connection = connection
   end
 
@@ -279,30 +272,136 @@ module Model::Cassandra
     Model::CLASS_NAMES.each do |model|
       eval "class ::#{model}
         include Cequel::Record
-
-        attr_accessor :created_at, :updated_at
-        def created_at
-          super || Time.now
-        end
-        def updated_at
-          super || Time.now
-        end
       end"
     end
   end
 
-  def define_attributes
+  def define_attributes(type)
     Post.class_eval do
-      key :id, :timeuuid, auto: true
+      key :id, :timeuuid, auto: true if type == :pub
+      key :id, :text                 if type == :sub
       column :content, :text
       column :author_id, :int
     end
 
     Comment.class_eval do
-      key :id, :timeuuid, auto: true
+      key :id, :timeuuid, auto: true if type == :pub
+      key :id, :text                 if type == :sub
       column :content, :text
       column :post_id, :text
       column :author_id, :text
+    end
+  end
+end
+
+module Model::ES
+  extend Model::Base
+  extend Model::Subscribers
+  extend self
+
+  def connect
+    require './es'
+
+    ENV['ELASTICSEARCH_URL'] = 'http://127.0.0.1:9200/'
+    ::ES.server
+  end
+
+  def do_migration(type)
+    ::ES.delete_all_indexes
+    load_models(type)
+    ::ES.create_index(Post.name.underscore)
+    ::ES.create_index(Comment.name.underscore)
+    Post.update_mapping(:_all)
+    Comment.update_mapping(:_all)
+  end
+
+  def define_models
+    Model::CLASS_NAMES.each do |model|
+      eval "class ::#{model} < ::ES::Model
+              include Promiscuous::Subscriber::Model::Base
+
+              def self.__promiscuous_fetch_existing(id)
+                find(id)
+              end
+
+              def self.__promiscuous_duplicate_key_exception?(e)
+                false
+              end
+
+              def save
+                super(self.class.name.underscore)
+              end
+
+              def save!(*a)
+                save(*a)
+              end
+            end"
+    end
+  end
+
+  def define_attributes(type)
+    Post.class_eval do
+      property :_id,       :type => :string, :index    => :not_analyzed
+      property :author_id, :type => :string, :index    => :not_analyzed
+      property :content,   :type => :string, :analyzer => :simple
+    end
+
+    Comment.class_eval do
+      property :_id,       :type => :string, :index    => :not_analyzed
+      property :author_id, :type => :string, :index    => :not_analyzed
+      property :post_id,   :type => :string, :index    => :not_analyzed
+      property :content,   :type => :string, :analyzer => :simple
+    end
+  end
+end
+
+module Model::RethinkDB
+  extend Model::Base
+  extend Model::Associations
+  extend Model::Subscribers
+  extend self
+
+  def connect
+    require 'nobrainer'
+    ENV['RETHINKDB_DB'] = 'benchmark'
+    NoBrainer.configure do |c|
+      c.rethinkdb_url = 'rethinkdb://127.0.0.1/benchmark'
+      c.logger = Logger.new(STDERR).tap { |l| l.level = ENV['LOGGER_LEVEL'].to_i }
+    end
+  end
+
+  def do_migration(type)
+    NoBrainer.drop!
+    load_models(type)
+    Post.first
+    Comment.first
+  end
+
+  def define_models
+    Model::CLASS_NAMES.each do |model|
+      eval "class ::#{model}
+              include NoBrainer::Document
+              include Promiscuous::Subscriber::Model::Base
+
+              def self.__promiscuous_fetch_existing(id)
+                find!(id)
+              end
+
+              def self.__promiscuous_duplicate_key_exception?(e)
+                false
+              end
+            end"
+    end
+  end
+
+  def define_attributes(type)
+    Post.class_eval do
+      field :content
+      field :author_id, :index => true
+    end
+    Comment.class_eval do
+      field :author_id
+      field :content
     end
   end
 end

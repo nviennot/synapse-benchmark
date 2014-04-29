@@ -4,16 +4,18 @@ require './boot'
 class Deadlock < RuntimeError; end
 
 def prepare_database(options={})
+  gemfile = options[:pub_db].to_s == 'mongodb' ? "./Gemfile.mongoid" : nil
   run <<-SCRIPT, "Prepping database (pub)", :tag => :pub, :num_workers => 1
     export DB=#{options[:pub_db]}
     cd /srv/promiscuous-benchmark/playback_pub
-    #{ruby_exec "./prepare_pub.rb"}
+    #{ruby_exec "./prepare_pub.rb", gemfile}
   SCRIPT
 
+  gemfile = options[:sub_db].to_s == 'mongodb' ? "./Gemfile.mongoid" : nil
   run <<-SCRIPT, "Prepping database (sub)", :tag => :sub, :num_workers => 1
     export DB=#{options[:sub_db]}
     cd /srv/promiscuous-benchmark/playback_sub
-    #{ruby_exec "./prepare_sub.rb"}
+    #{ruby_exec "./prepare_sub.rb", gemfile}
   SCRIPT
 end
 
@@ -46,6 +48,7 @@ def clean_rabbitmq
 end
 
 def run_publisher(options={})
+  gemfile = "./Gemfile.mongoid" if options[:pub_db].to_s == 'mongodb'
   run <<-SCRIPT, "Running publishers", options.merge(:tag => :pub)
     cd /srv/promiscuous-benchmark/playback_pub
 
@@ -59,12 +62,13 @@ def run_publisher(options={})
     #{"export NUM_REDIS=#{options[:num_pub_redis]}" if options[:num_pub_redis]}
     #{"export PUB_LATENCY=#{options[:pub_latency]}" if options[:pub_latency]}
     #{"export NUM_READ_DEPS=#{options[:num_read_deps]}" if options[:num_read_deps]}
-    #{ruby_exec "./pub.rb"}
+    #{ruby_exec "./pub.rb", gemfile}
   SCRIPT
     # #{ruby_exec(options[:num_read_deps] ? "./pub_dep.rb" : "./pub.rb")}
 end
 
 def run_subscriber(options={})
+  gemfile = "./Gemfile.mongoid" if options[:sub_db].to_s == 'mongodb'
   run <<-SCRIPT, "Running subscribers", options.merge(:tag => :sub)
     cd /srv/promiscuous-benchmark/playback_sub
 
@@ -78,7 +82,7 @@ def run_subscriber(options={})
     #{"export EVAL='#{[options[:sub_eval]].to_json}'" if options[:sub_eval]}
     #{"export NUM_REDIS=#{options[:num_sub_redis]}" if options[:num_sub_redis]}
     #{"export SUB_LATENCY=#{options[:sub_latency]}" if options[:sub_latency]}
-    #{ruby_exec "./sub.rb"}
+    #{ruby_exec "./sub.rb", gemfile}
   SCRIPT
 end
 
@@ -285,12 +289,12 @@ begin
 
   options = {
     :pub_db => :mongodb,
-    :sub_db => :mysql,
+    :sub_db => :rethinkdb,
     :num_users => 100,
     # :sub_latency => 0,
     :num_workers => 1,
     :num_redis => 1,
-    :num_read_deps => :native,
+    # :num_read_deps => :native,
     :hash_size => 0,
     # :num_workers => 100,
 
