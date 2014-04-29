@@ -289,7 +289,7 @@ begin
 
   options = {
     :pub_db => :mongodb,
-    :sub_db => :rethinkdb,
+    :sub_db => :neo4j,
     :num_users => 100,
     # :sub_latency => 0,
     :num_workers => 1,

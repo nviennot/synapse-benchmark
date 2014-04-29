@@ -13,6 +13,7 @@ module Model
     when 'cassandra' then Model::Cassandra
     when 'es'        then Model::ES
     when 'rethinkdb' then Model::RethinkDB
+    when 'neo4j'     then Model::Neo4j
     end
   end
 end
@@ -402,6 +403,56 @@ module Model::RethinkDB
     Comment.class_eval do
       field :author_id
       field :content
+    end
+  end
+end
+
+module Model::Neo4j
+  extend Model::Base
+  extend Model::Subscribers
+  extend self
+
+  def connect
+    require 'neo4j'
+    Neo4j::Session.open(:server_db, "http://localhost:7474")
+  end
+
+  def do_migration(type)
+    Neo4j::Session.current.query <<-Q
+      MATCH (n)
+      OPTIONAL MATCH (n)-[r]-()
+      DELETE n,r
+    Q
+  end
+
+  def define_models
+    Model::CLASS_NAMES.each do |model|
+      eval "class ::#{model}
+              include Neo4j::ActiveNode
+              include Promiscuous::Subscriber::Model::Base
+
+              def self.__promiscuous_fetch_existing(id)
+                find!(id)
+              end
+
+              def self.__promiscuous_duplicate_key_exception?(e)
+                false
+              end
+            end"
+    end
+  end
+
+  def define_attributes(type)
+    Post.class_eval do
+      property :id
+      property :content
+      property :author_id
+    end
+    Comment.class_eval do
+      property :id
+      property :content
+      property :post_id
+      property :author_id
     end
   end
 end
