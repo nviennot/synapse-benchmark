@@ -73,6 +73,8 @@ module ES
 
     def save(index_name)
       self.class.index(index_name).put(self.id, self.reject { |k, v| v.nil? })
+    rescue Faraday::Error::TimeoutError
+      retry
     end
   end
 end

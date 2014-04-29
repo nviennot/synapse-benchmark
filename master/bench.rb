@@ -4,11 +4,17 @@ require './boot'
 class Deadlock < RuntimeError; end
 
 def get_server_ip(type, db)
-  dba = '10.186.27.39'
-  dbc = '10.146.209.188'
+  dba = %w(10.179.150.240 10.186.24.18 10.237.155.60)
+  dbc = %w(10.230.133.230 10.234.179.198 10.187.35.102)
+
+  unless %w(es cassandra).include?(db.to_s)
+    dba = [dba.first]
+    dbc = [dbc.first]
+  end
+
   case type
-  when :pub then dba
-  when :sub then dbc
+  when :pub then dba.join(',')
+  when :sub then dbc.join(',')
   end
 end
 
@@ -141,7 +147,7 @@ module Stats
       @master = master
       @key = key
       @samples = []
-      @num_samples = 60
+      @num_samples = 30
     end
 
     def sample
@@ -234,7 +240,7 @@ def measure_stats(jobs, options={})
 end
 
 def benchmark_once(variables, options={})
-  num_tries = 10
+  num_tries = 30
   tries = num_tries
 
   options = options.dup
@@ -303,11 +309,12 @@ begin
   # update_app
 
   options = {
-    :dbs => %w(nodb->nodb),
+    # :dbs => %w(mysql->neo4j cassandra->es tokumx->postgres mongodb->rethinkdb nodb->nodb),
+    :dbs => %w(cassandra->es),
     # :dbs => %w(nodb->rethinkdb),
     :num_users => 1000,
     # :sub_latency => 0,
-    :num_workers => [1,2,5,10,20,50,100,200].reverse,
+    :num_workers => [400],
     :num_redis => 80,
     # :num_read_deps => :native,
     :hash_size => 0,
