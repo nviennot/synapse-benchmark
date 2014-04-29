@@ -1,0 +1,95 @@
+
+#--------------------------------------------------------------------------------
+# :dbs => ["nodb->nodb"]
+# :num_users => 1000
+# :num_workers => [1, 2, 5, 10, 20, 50, 100]
+# :num_redis => 20
+# :hash_size => 0
+# :cleanup_interval => 100
+# :queue_max_age => 1000
+# :prefetch => 100
+# :max_num_friends => 500
+# :coeff_num_friends => 0.8
+nodb->nodb 1 193.2 4.57
+nodb->nodb 2 384.3 4.59
+nodb->nodb 5 950.7 4.66
+nodb->nodb 10 1901.9 4.68
+nodb->nodb 20 3734.8 4.77
+nodb->nodb 50 8995.1 4.96
+nodb->nodb 100 17240.9 5.18
+
+#--------------------------------------------------------------------------------
+# :dbs => ["mysql->neo4j"]
+# :num_users => 1000
+# :num_workers => [1, 2, 5, 10, 20, 50, 100]
+# :num_redis => 20
+# :hash_size => 0
+# :cleanup_interval => 100
+# :queue_max_age => 1000
+# :prefetch => 100
+# :max_num_friends => 500
+# :coeff_num_friends => 0.8
+mysql->neo4j 1 81.8 8.75
+mysql->neo4j 2 173.8 8.63
+mysql->neo4j 5 313.7 9.48
+mysql->neo4j 10 369.8 9.29
+mysql->neo4j 20 403.8 8.6
+mysql->neo4j 50 420.0 9.07
+mysql->neo4j 100 424.4 10.09
+
+#--------------------------------------------------------------------------------
+# :dbs => ["cassandra->es"]
+# :num_users => 1000
+# :num_workers => [1, 2, 5, 10, 20, 50, 100]
+# :num_redis => 20
+# :hash_size => 0
+# :cleanup_interval => 100
+# :queue_max_age => 1000
+# :prefetch => 100
+# :max_num_friends => 500
+# :coeff_num_friends => 0.8
+cassandra->es 1 156.2 5.7
+cassandra->es 2 318.3 5.55
+cassandra->es 5 784.7 5.66
+cassandra->es 10 1563.8 5.66
+cassandra->es 20 3064.5 5.77
+cassandra->es 50 7417.5 5.98
+cassandra->es 100 9777.9 6.19
+
+#--------------------------------------------------------------------------------
+# :dbs => ["postgres->tokumx"]
+# :num_users => 1000
+# :num_workers => [1, 2, 5, 10, 20, 50, 100]
+# :num_redis => 20
+# :hash_size => 0
+# :cleanup_interval => 100
+# :queue_max_age => 1000
+# :prefetch => 100
+# :max_num_friends => 500
+# :coeff_num_friends => 0.8
+postgres->tokumx 1 113.8 7.98
+postgres->tokumx 2 230.8 7.93
+postgres->tokumx 5 551.9 8.26
+postgres->tokumx 10 1051.0 8.72
+postgres->tokumx 20 2003.6 9.19
+postgres->tokumx 50 4828.1 9.52
+postgres->tokumx 100 8976.8 10.3
+
+#--------------------------------------------------------------------------------
+# :dbs => ["mongodb->rethinkdb"]
+# :num_users => 1000
+# :num_workers => [1, 2, 5, 10, 20, 50, 100]
+# :num_redis => 20
+# :hash_size => 0
+# :cleanup_interval => 100
+# :queue_max_age => 1000
+# :prefetch => 100
+# :max_num_friends => 500
+# :coeff_num_friends => 0.8
+mongodb->rethinkdb 1 146.0 6.1
+mongodb->rethinkdb 2 290.3 6.14
+mongodb->rethinkdb 5 727.5 6.16
+mongodb->rethinkdb 10 1427.0 6.24
+mongodb->rethinkdb 20 2793.0 6.39
+mongodb->rethinkdb 50 5642.2 6.7
+mongodb->rethinkdb 100 6803.0 7.42

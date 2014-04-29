@@ -3,23 +3,19 @@ require './boot'
 
 class Deadlock < RuntimeError; end
 
-def get_server_ip(type)
-  case type.to_sym
-  when :nodb       then 'localhost'
-  when :mongodb    then '23.20.168.155'
-  when :mysql      then '23.20.168.155'
-  when :postgres   then '23.20.168.155'
-  when :cassandra  then '23.20.168.155'
-  when :es         then '23.20.168.155'
-  when :rethinkdb  then '23.20.168.155'
-  when :neo4j      then '23.20.168.155'
+def get_server_ip(type, db)
+  dba = '10.186.27.39'
+  dbc = '10.146.209.188'
+  case type
+  when :pub then dba
+  when :sub then dbc
   end
 end
 
 def prepare_database(options={})
   gemfile = %w(mongodb tokumx).include?(options[:pub_db]) ? "./Gemfile.mongoid" : nil
   run <<-SCRIPT, "Prepping database (pub)", :tag => :pub, :num_workers => 1
-    export DB_SERVER=#{get_server_ip(options[:pub_db])}
+    export DB_SERVER=#{get_server_ip(:pub, options[:pub_db])}
     export DB=#{options[:pub_db]}
     cd /srv/promiscuous-benchmark/playback_pub
     #{ruby_exec "./prepare_pub.rb", gemfile}
@@ -27,7 +23,7 @@ def prepare_database(options={})
 
   gemfile = %w(mongodb tokumx).include?(options[:sub_db]) ? "./Gemfile.mongoid" : nil
   run <<-SCRIPT, "Prepping database (sub)", :tag => :sub, :num_workers => 1
-    export DB_SERVER=#{get_server_ip(options[:sub_db])}
+    export DB_SERVER=#{get_server_ip(:sub, options[:sub_db])}
     export DB=#{options[:sub_db]}
     cd /srv/promiscuous-benchmark/playback_sub
     #{ruby_exec "./prepare_sub.rb", gemfile}
@@ -67,7 +63,7 @@ def run_publisher(options={})
   run <<-SCRIPT, "Running publishers", options.merge(:tag => :pub)
     cd /srv/promiscuous-benchmark/playback_pub
 
-    export DB_SERVER=#{get_server_ip(options[:pub_db])}
+    export DB_SERVER=#{get_server_ip(:pub, options[:pub_db])}
     export DB=#{options[:pub_db]}
     export MAX_NUM_FRIENDS=#{options[:max_num_friends]}
     export COEFF_NUM_FRIENDS=#{options[:coeff_num_friends]}
@@ -88,7 +84,7 @@ def run_subscriber(options={})
   run <<-SCRIPT, "Running subscribers", options.merge(:tag => :sub)
     cd /srv/promiscuous-benchmark/playback_sub
 
-    export DB_SERVER=#{get_server_ip(options[:sub_db])}
+    export DB_SERVER=#{get_server_ip(:sub, options[:sub_db])}
     export DB=#{options[:sub_db]}
     export CLEANUP_INTERVAL=#{options[:cleanup_interval]}
     export QUEUE_MAX_AGE=#{options[:queue_max_age]}
@@ -238,7 +234,7 @@ def measure_stats(jobs, options={})
 end
 
 def benchmark_once(variables, options={})
-  num_tries = 1
+  num_tries = 10
   tries = num_tries
 
   options = options.dup
@@ -307,11 +303,12 @@ begin
   # update_app
 
   options = {
-    # :dbs => %w(mysql->neo4j cassandra->es tokumx->postgres mongodb->rethinkdb nodb->nodb),
-    :dbs => %w(nodb->rethinkdb),
-    :num_users => 10000,
+    # :dbs => %w(nodb->nodb mysql->neo4j cassandra->es postgres->tokumx mongodb->rethinkdb),
+    # :dbs => %w(nodb->rethinkdb),
+    :dbs => %w(mongodb->nodb mysql->nodb cassandra->nodb postgres->nodb tokumx->nodb),
+    :num_users => 1000,
     # :sub_latency => 0,
-    :num_workers => 1,
+    :num_workers => 5,
     :num_redis => 1,
     # :num_read_deps => :native,
     :hash_size => 0,

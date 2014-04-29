@@ -9,5 +9,5 @@ FILE=/tmp/ec2/${1}_${2}_${3}_${4}
 source aws_keys
 
 mkdir -p /tmp/ec2/
-ec2-run-instances ami-cf4c57a6 -t c3.large -z us-east-1$1 -g promiscuous-sg -n $NUM | tee $FILE &&
+ec2-run-instances ami-a6e90ece -t c3.large -z us-east-1$1 -g promiscuous-sg -n $NUM | tee $FILE &&
 ec2-create-tags `cat $FILE | grep '^INSTANCE' | awk '{print $2}'` -t Role=$ROLE

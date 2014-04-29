@@ -25,4 +25,4 @@ end
 
 # kill_all
 update_hosts
-update_app
+# update_app
