@@ -29,7 +29,7 @@ def publish
         post.id = "#{user_id}-#{current_user.node.incr("pub:#{user_id}:latest_post_id")}"
       end
 
-      $overhead_stat.measure { Post.save }
+      $overhead_stat.measure { post.save }
     end
   end
 end
