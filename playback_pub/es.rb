@@ -31,8 +31,8 @@ module ES
   end
 
   def self.update_all_mappings
-    App.update_mapping(:_all) rescue nil
-    Source.update_mapping(:live) rescue nil
+    App.update_mapping(:_all)
+    Source.update_mapping(:live)
   end
 
   class Model < Hashie::Dash

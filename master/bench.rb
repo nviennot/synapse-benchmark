@@ -25,6 +25,7 @@ def prepare_database(options={})
   run <<-SCRIPT, "Prepping database (pub)", :tag => :pub, :num_workers => 1 unless options[:pub_db] == 'nodb'
     export DB_SERVER=#{get_server_ip(:pub, options[:pub_db])}
     export DB=#{options[:pub_db]}
+    #{"export NATIVE=1" if options[:native]}
     cd /srv/promiscuous-benchmark/playback_pub
     #{ruby_exec "./prepare_pub.rb", gemfile}
   SCRIPT
@@ -158,7 +159,7 @@ module Stats
       s = read_sample
       return unless s
       @samples << s
-      STDERR.puts "[#{@samples.size}/#{@num_samples}] Sampling of #{@key}: \e[1;37m#{s.round(1)}\e[0m#{unit}"
+      STDERR.puts "[#{@samples.size}/#{@num_samples}] Sampling of #{@key}: \e[1;37m#{s.round(2)}\e[0m#{unit}"
     end
 
     def finished?
@@ -174,7 +175,7 @@ module Stats
       clean_samples = @samples.sort_by { |x| -x }.to_a[drop_window/2 ... -drop_window/2]
       avg = clean_samples.reduce(:+) / clean_samples.size.to_f
 
-      STDERR.puts "Average sampling of #{@key}: \e[1;36m#{avg.round(1)}\e[0m#{unit}"
+      STDERR.puts "Average sampling of #{@key}: \e[1;36m#{avg.round(2)}\e[0m#{unit}"
       avg
     end
   end
@@ -258,7 +259,7 @@ def benchmark_once(variables, options={})
     tries -= 1
     jobs = run_benchmark(options)
     rate, pub_overhead = measure_stats(jobs, options)
-    rate = rate.round(1)
+    rate = rate.round(2)
     pub_overhead = pub_overhead.round(2)
     puts
     puts
@@ -317,7 +318,7 @@ begin
     :dbs => %w(mysql->nodb cassandra->nodb postgres->nodb mongodb->nodb rethinkdb->nodb neo4j->nodb es->nodb),
     :num_users => 1000,
     # :sub_latency => 0.1,
-    :num_workers => 1,
+    :num_workers => 3,
     :num_redis => 1,
     :native => 1,
     :num_read_deps => 0, # needed for unbalanced users
