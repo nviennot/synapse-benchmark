@@ -390,7 +390,7 @@ module Model::RethinkDB
   end
 
   def do_migration(type)
-    NoBrainer.drop!
+    NoBrainer.purge!
     load_models(type)
     Post.first
     Comment.first
