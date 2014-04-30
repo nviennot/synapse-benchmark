@@ -39,6 +39,7 @@ end
 def update_app
   run <<-SCRIPT, "app git pull"
     cd /srv/promiscuous-benchmark/playback_pub &&
+    git reset --hard
     git pull https://github.com/nviennot/promiscuous-benchmark.git master:master
   SCRIPT
 end
@@ -128,7 +129,7 @@ def run_benchmark(options={})
     sleep 0.1
     jobs.check_for_failures
     break if @master.llen("ip:sub") == options[:num_workers]
-    if Time.now - start > 30
+    if Time.now - start > 15
       jobs.kill
       raise Deadlock
     end
@@ -312,8 +313,9 @@ begin
     :dbs => 'nodb->nodb',
     :num_users => [1000, 100, 10, 1],
     :sub_latency => "0.1",
-    :num_workers => 10,
-    :num_redis => 5,
+    # :num_workers => [1, 2, 5, 10, 20, 50, 100, 200, 400].reverse,
+    :num_workers => [100].reverse,
+    :num_redis => 50,
     # :num_read_deps => :native,
     :num_read_deps => 0,
     :hash_size => 0,

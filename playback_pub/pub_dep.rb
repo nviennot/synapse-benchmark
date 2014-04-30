@@ -3,7 +3,7 @@ load 'common.rb'
 bootstrap(:pub)
 
 class User
-  include Promiscuous::Publisher::Model::Ephemeral
+  include Promiscuous::Publisher
 
   def node
     Promiscuous::Dependency.new(id, "latest_post_id").redis_node
