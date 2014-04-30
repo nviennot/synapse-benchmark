@@ -144,15 +144,15 @@ def add_instrumentation(type)
   when :pub
     # nope
   when :sub
-    # $msg_count_bench = Stats::Counter.new('sub_msg')
-    # Promiscuous::Subscriber::Operation::Regular.class_eval do
-      # alias_method :execute_orig, :execute
-      # def execute
-        # $msg_count_bench.inc
-        # sleep ENV['SUB_LATENCY'].to_f if ENV['SUB_LATENCY']
-        # execute_orig
-      # end
-    # end
+    $msg_count_bench = Stats::Counter.new('sub_msg')
+    Promiscuous::Subscriber::Operation::Regular.class_eval do
+      alias_method :execute_orig, :execute
+      def execute
+        $msg_count_bench.inc
+        sleep ENV['SUB_LATENCY'].to_f if ENV['SUB_LATENCY']
+        execute_orig
+      end
+    end
   end
 end
 

@@ -4,10 +4,6 @@ bootstrap(:pub)
 
 class User
   include Promiscuous::Publisher
-
-  def node
-    Promiscuous::Dependency.new(id, "latest_post_id").redis_node
-  end
 end
 
 $num_read_deps = ENV['NUM_READ_DEPS'].to_i
@@ -18,20 +14,10 @@ $overhead_stat = Stats::Average.new('pub_overhead')
 $msg_count_bench = Stats::Counter.new('pub_msg')
 
 def create_post(user_id)
-  current_user = User.new(:id => user_id)
-  Promiscuous::Publisher::Context.current.current_user = current_user
-
-  post = Post.new(:author_id => user_id, :content => 'hello world')
-  if post.is_a?(Promiscuous::Publisher::Model::Ephemeral)
-    post.id = "#{user_id}0#{current_user.node.incr("pub:#{user_id}:latest_post_id")}"
-  end
-
+  post = Post.new(:id => user_id, :author_id => user_id, :content => 'hello world')
+  $num_read_deps.times { User.new(:id => rand(1..$num_users)).read }
   $overhead_stat.measure { post.save }
   $msg_count_bench.inc
-
-  unless post.is_a?(Promiscuous::Publisher::Model::Ephemeral)
-    current_user.node.set("pub:#{user_id}:latest_post_id", post.id)
-  end
 end
 
 def publish
