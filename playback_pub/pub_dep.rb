@@ -18,12 +18,13 @@ $overhead_stat = Stats::Average.new('pub_overhead')
 def publish
   loop do
     Promiscuous.context(:bench) do
-      current_user = User.new(:id => rand(1..$num_users))
+      user_id = rand(1..$num_users)
+      current_user = User.new(:id => user_id)
       Promiscuous::Publisher::Context.current.current_user = current_user
 
       $num_read_deps.times { User.new(:id => rand(1..$num_users)).read }
 
-      post = Post.new(:author_id => current_user.id, :content => 'hello world')
+      post = Post.new(:author_id => user_id, :content => 'hello world')
       if post.is_a?(Promiscuous::Publisher::Model::Ephemeral)
         post.id = "#{user_id}-#{current_user.node.incr("pub:#{user_id}:latest_post_id")}"
       end
