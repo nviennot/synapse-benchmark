@@ -14,7 +14,10 @@ $num_read_deps = ENV['NUM_READ_DEPS'].to_i
 $num_users = ENV['NUM_USERS'].to_i
 $num_users = 2**30 if $num_users == 0
 
+
 $overhead_stat = Stats::Average.new('pub_overhead')
+$msg_count_bench = Stats::Counter.new('pub_msg')
+
 def publish
   loop do
     Promiscuous.context(:bench) do
@@ -30,6 +33,7 @@ def publish
       end
 
       $overhead_stat.measure { post.save }
+      $msg_count_bench.inc
     end
   end
 end
