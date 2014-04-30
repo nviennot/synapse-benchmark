@@ -310,22 +310,22 @@ begin
   kill_all
   @master = Redis.new(:url => 'redis://master/')
   # benchmark_all
-  update_app
+  # update_app
 
   options = {
     #:dbs => %w(mysql->neo4j cassandra->es postgres->tokumx mongodb->rethinkdb nodb->nodb),
     # :dbs => 'nodb->nodb',
-    :dbs => %w(nodb->nodb cassandra->nodb mongodb->nodb postgres->nodb mysql->nodb),
+    :dbs => %w(tokumx->nodb),
     :num_users => 1000,
     # :sub_latency => 0.1,
     :num_workers => 3,
     :num_redis => 1,
     # :native => 1,
-    :num_read_deps => 0, # needed for unbalanced users
+    :num_read_deps => [1,2,5,10,20,50,100,200,500,1000], # needed for unbalanced users
     :hash_size => 0,
     # :num_workers => 100,
 
-    #:pub_latency => "0.002",
+    # :pub_latency => "0.01",
     :cleanup_interval => 100,
     :queue_max_age => 1000,
     :prefetch => 100,

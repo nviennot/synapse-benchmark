@@ -1,0 +1,40 @@
+#--------------------------------------------------------------------------------
+# :dbs => ["mysql->nodb", "cassandra->nodb", "postgres->nodb", "mongodb->nodb", "rethinkdb->nodb", "neo4j->nodb", "es->nodb"]
+# :num_users => 1000
+# :num_workers => 3
+# :num_redis => 1
+# :native => 1
+# :num_read_deps => 0
+# :hash_size => 0
+# :cleanup_interval => 100
+# :queue_max_age => 1000
+# :prefetch => 100
+# :max_num_friends => 500
+# :coeff_num_friends => 0.8
+mysql->nodb 0.0 1.72
+cassandra->nodb 0.0 0.81
+postgres->nodb 0.0 1.9
+mongodb->nodb 0.0 0.68
+rethinkdb->nodb 0.0 1.51
+neo4j->nodb 0.0 9.99
+es->nodb 0.0 1.67
+tokumx->nodb 0.0 0.68
+
+#--------------------------------------------------------------------------------
+# :dbs => ["nodb->nodb", "cassandra->nodb", "mongodb->nodb", "postgres->nodb", "mysql->nodb"]
+# :num_users => 1000
+# :num_workers => 3
+# :num_redis => 1
+# :num_read_deps => 0
+# :hash_size => 0
+# :cleanup_interval => 100
+# :queue_max_age => 1000
+# :prefetch => 100
+# :max_num_friends => 500
+# :coeff_num_friends => 0.8
+nodb->nodb 836.5 3.52
+postgres->nodb 456.62 6.38
+mysql->nodb 456.11 6.42
+cassandra->nodb 669.74 4.35
+mongodb->nodb 594.2 4.91
+tokumx->nodb 580.22 5.03
