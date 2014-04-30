@@ -4,7 +4,7 @@ set output "throughput-vs-workers-saturate.pdf"
 #set autoscale fix
 
 #set format y "%.0e"
-set ylabel "Throughput [msg/s]" font "Times-Roman,14"
+set ylabel "Throughput [msg/s] (log)" font "Times-Roman,14"
 #set ylabel offset +1.2,0
 set yrange [5:5000]
 

@@ -4,8 +4,10 @@ require './boot'
 class Deadlock < RuntimeError; end
 
 def get_server_ip(type, db)
-  dba = %w(10.179.150.240 10.186.24.18 10.237.155.60)
-  dbc = %w(10.37.156.125 10.69.5.140 10.234.179.198)
+  # dba = %w(10.179.150.240 10.186.24.18 10.237.155.60)
+  # dbc = %w(10.37.156.125 10.69.5.140 10.234.179.198)
+  dba = %w(10.150.49.3)
+  dbc = %w()
 
   unless %w(es cassandra).include?(db.to_s)
     dba = [dba.first]
@@ -129,7 +131,7 @@ def run_benchmark(options={})
   loop do
     sleep 0.1
     jobs.check_for_failures
-    break if @master.llen("ip:sub") == options[:num_workers]
+    break if @master.llen(options[:native] ? "ip:pub" : "ip:sub") == options[:num_workers]
     if Time.now - start > 15
       jobs.kill
       raise Deadlock
@@ -307,16 +309,17 @@ begin
   kill_all
   @master = Redis.new(:url => 'redis://master/')
   # benchmark_all
-  # update_app
+  update_app
 
   options = {
-    # :dbs => %w(mysql->neo4j cassandra->es postgres->tokumx mongodb->rethinkdb nodb->nodb),
-    :dbs => 'nodb->nodb',
-    :num_users => [10, 1],
-    :sub_latency => 0.1,
-    :num_workers => [1, 2, 5, 10, 20, 50, 100, 200, 400].reverse,
-    :num_redis => 50,
-    # :native => 1,
+    #:dbs => %w(mysql->neo4j cassandra->es postgres->tokumx mongodb->rethinkdb nodb->nodb),
+    # :dbs => 'nodb->nodb',
+    :dbs => %w(mysql->nodb cassandra->nodb postgres->nodb mongodb->nodb rethinkdb->nodb neo4j->nodb es->nodb),
+    :num_users => 1000,
+    # :sub_latency => 0.1,
+    :num_workers => 1,
+    :num_redis => 1,
+    :native => 1,
     :num_read_deps => 0, # needed for unbalanced users
     :hash_size => 0,
     # :num_workers => 100,
