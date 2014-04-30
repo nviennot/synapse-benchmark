@@ -20,7 +20,7 @@ $msg_count_bench = Stats::Counter.new('pub_msg')
 
 def create_post(user_id)
   current_user = User.new(:id => user_id)
-  Promiscuous::Publisher::Context.current.current_user = current_user
+  # Promiscuous::Publisher::Context.current.current_user = current_user
 
   post = Post.new(:author_id => user_id, :content => 'hello world')
   if post.is_a?(Promiscuous::Publisher::Model::Ephemeral)
