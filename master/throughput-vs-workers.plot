@@ -4,20 +4,20 @@ set output "throughput-vs-workers.pdf"
 #set autoscale fix
 
 #set format y "%.0e"
-set ylabel "Throughput [msg/s]" font "Times-Roman,14"
+set ylabel "Throughput [msg/s] (log)" font "Times-Roman,14"
 #set ylabel offset +1.2,0
-set yrange [80:50000]
+set yrange [80:70000]
 
 set xlabel "Number of Synapse workers" font "Times-Roman,14"
 #set xlabel offset 0,+1
-set xrange [1:100]
+set xrange [1:400]
 set xtics font "Times-Roman,14"
 set ytics font "Times-Roman,14"
 
 set logscale xy
 
-set ytics (3, 10, 30, 100, 300, 1000, 3000, 10000, 20000, 50000)
-set xtics (1,2,5,10,20,50,100, 200, 350)
+set ytics (3, 10, 30, 100, 300, 1000, 3000, 10000, 30000, 60000)
+set xtics (1,2,5,10,20,50,100, 200, 400)
 set grid ytics
 set grid xtics
 # set ytics 250 font "Times-Roman,14"
