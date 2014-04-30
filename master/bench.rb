@@ -311,13 +311,13 @@ begin
   options = {
     # :dbs => %w(mysql->neo4j cassandra->es postgres->tokumx mongodb->rethinkdb nodb->nodb),
     :dbs => 'nodb->nodb',
-    :num_users => [1000, 100, 10, 1],
-    :sub_latency => "0.1",
-    # :num_workers => [1, 2, 5, 10, 20, 50, 100, 200, 400].reverse,
-    :num_workers => [100].reverse,
-    :num_redis => 50,
+    :num_users => 1,
+    :sub_latency => 0.1,
+    :num_workers => 10,
+    #:num_workers => [1, 2, 5, 10, 20, 50, 100, 200, 400].reverse,
+    :num_redis => 1,
     # :num_read_deps => :native,
-    :num_read_deps => 0,
+    :num_read_deps => 0, # needed for unbalanced users
     :hash_size => 0,
     # :num_workers => 100,
 

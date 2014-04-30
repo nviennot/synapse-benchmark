@@ -19,7 +19,7 @@ GIT
 
 GIT
   remote: https://github.com/nviennot/promiscuous.git
-  revision: 90903705ef78e7f6eccc3dc53cda1290dc149ae4
+  revision: 5927ee29c72562eae1db67c78fb3c46c2363e8a7
   branch: master
   specs:
     promiscuous (0.91.0)
