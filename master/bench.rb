@@ -307,7 +307,7 @@ begin
   kill_all
   @master = Redis.new(:url => 'redis://master/')
   # benchmark_all
-  update_app
+  # update_app
 
   options = {
     # :dbs => %w(mysql->neo4j cassandra->es postgres->tokumx mongodb->rethinkdb nodb->nodb),
