@@ -32,9 +32,7 @@ def publish
         post.id = "#{user_id}0#{current_user.node.incr("pub:#{user_id}:latest_post_id")}"
       end
 
-      Promiscuous::Config.logger.level = 0
       $overhead_stat.measure { post.save }
-      raise
       $msg_count_bench.inc
     end
   end
