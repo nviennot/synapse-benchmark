@@ -1,9 +1,8 @@
 #!/usr/bin/env ruby
 require './boot'
 
-raise unless ENV['MASTER_IP']
-
 def update_hosts
+  raise unless ENV['MASTER_IP']
   run <<-SCRIPT, "Updating /etc/hosts"
     # HOST=`/root/get_abricot_redis`
     HOST=#{ENV['MASTER_IP']}
@@ -12,7 +11,7 @@ def update_hosts
 end
 
 def update_app
-  run <<-SCRIPT, "Updating application"
+  run <<-SCRIPT, "Updating application", :num_workers => 100
     cd /srv/promiscuous-benchmark &&
     git fetch &&
     git reset --hard FETCH_HEAD &&
@@ -25,6 +24,6 @@ def update_app
   SCRIPT
 end
 
-# kill_all
-update_hosts
-# update_app
+kill_all
+# update_hosts
+update_app
