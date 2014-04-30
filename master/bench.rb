@@ -20,7 +20,7 @@ end
 
 def prepare_database(options={})
   gemfile = %w(mongodb tokumx).include?(options[:pub_db]) ? "./Gemfile.mongoid" : nil
-  run <<-SCRIPT, "Prepping database (pub)", :tag => :pub, :num_workers => 1
+  run <<-SCRIPT, "Prepping database (pub)", :tag => :pub, :num_workers => 1 unless options[:pub_db] == 'nodb'
     export DB_SERVER=#{get_server_ip(:pub, options[:pub_db])}
     export DB=#{options[:pub_db]}
     cd /srv/promiscuous-benchmark/playback_pub
@@ -28,7 +28,7 @@ def prepare_database(options={})
   SCRIPT
 
   gemfile = %w(mongodb tokumx).include?(options[:sub_db]) ? "./Gemfile.mongoid" : nil
-  run <<-SCRIPT, "Prepping database (sub)", :tag => :sub, :num_workers => 1
+  run <<-SCRIPT, "Prepping database (sub)", :tag => :sub, :num_workers => 1 unless options[:sub_db] == 'nodb'
     export DB_SERVER=#{get_server_ip(:sub, options[:sub_db])}
     export DB=#{options[:sub_db]}
     cd /srv/promiscuous-benchmark/playback_sub
@@ -57,9 +57,9 @@ end
 
 def clean_rabbitmq
   run <<-SCRIPT, "Purging RabbitMQ", :tag => :pub
-    sudo rabbitmqctl stop_app   &&
-    sudo rabbitmqctl force_reset      &&
-    sudo rabbitmqctl start_app  &&
+    sudo rabbitmqctl stop_app    &&
+    sudo rabbitmqctl force_reset &&
+    sudo rabbitmqctl start_app   &&
     sleep 1
   SCRIPT
 end
@@ -80,9 +80,8 @@ def run_publisher(options={})
     #{"export NUM_REDIS=#{options[:num_pub_redis]}" if options[:num_pub_redis]}
     #{"export PUB_LATENCY=#{options[:pub_latency]}" if options[:pub_latency]}
     #{"export NUM_READ_DEPS=#{options[:num_read_deps]}" if options[:num_read_deps]}
-    #{ruby_exec "./pub.rb", gemfile}
+    #{ruby_exec(options[:num_read_deps] ? "./pub_dep.rb" : "./pub.rb", gemfile)}
   SCRIPT
-    # #{ruby_exec(options[:num_read_deps] ? "./pub_dep.rb" : "./pub.rb")}
 end
 
 def run_subscriber(options={})
@@ -310,12 +309,13 @@ begin
 
   options = {
     # :dbs => %w(mysql->neo4j cassandra->es postgres->tokumx mongodb->rethinkdb nodb->nodb),
-    :dbs => %w(nodb->nodb),
+    :dbs => 'nodb->nodb',
     :num_users => [1000, 100, 10, 1],
     :sub_latency => "0.1",
     :num_workers => [1, 2, 5, 10, 20, 50, 100, 200, 400].reverse,
-    :num_redis => 80,
+    :num_redis => 50,
     # :num_read_deps => :native,
+    :num_read_deps => 0,
     :hash_size => 0,
     # :num_workers => 100,
 

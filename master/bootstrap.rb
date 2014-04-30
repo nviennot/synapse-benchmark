@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 require './boot'
 
+raise unless ENV['MASTER_IP']
+
 def update_hosts
   run <<-SCRIPT, "Updating /etc/hosts"
     # HOST=`/root/get_abricot_redis`
