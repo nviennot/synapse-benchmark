@@ -4,8 +4,7 @@ load 'common.rb'
 bootstrap(:sub)
 
 $msg_count_bench = Stats::Counter.new('sub_msg')
-class User
-  include Promiscuous::Subscriber
+class Post
   after_save do
 $msg_count_bench.inc
 sleep ENV['SUB_LATENCY'].to_f if ENV['SUB_LATENCY']
