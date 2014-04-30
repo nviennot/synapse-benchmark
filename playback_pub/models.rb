@@ -386,7 +386,7 @@ module Model::RethinkDB
     NoBrainer.configure do |c|
       c.rethinkdb_url = "rethinkdb://#{ENV['DB_SERVER']}/benchmark"
       c.logger = Logger.new(STDERR).tap { |l| l.level = ENV['LOGGER_LEVEL'].to_i }
-      c.durability = :soft
+      # c.durability = :soft
     end
   end
 

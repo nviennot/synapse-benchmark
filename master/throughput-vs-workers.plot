@@ -6,7 +6,7 @@ set output "throughput-vs-workers.pdf"
 #set format y "%.0e"
 set ylabel "Throughput [msg/s] (log)" font "Times-Roman,14"
 #set ylabel offset +1.2,0
-set yrange [80:70000]
+set yrange [80:100000]
 
 set xlabel "Number of Synapse workers" font "Times-Roman,14"
 #set xlabel offset 0,+1
@@ -34,8 +34,8 @@ set key reverse top Left left font "Times-Roman,14"
 
 set datafile missing
 
-plot 'throughput-vs-workers.dat' using 1:2 title "Ephemeral  → Observer"      with linespoint lt 1 ps 1 lw 4 lc 4 pt 2, \
-     ''                          using 1:4 title "Cassandra  → Elasticsearch" with linespoint lt 1 ps 1 lw 4 lc 2 pt 4, \
-     ''                          using 1:6 title "MongoDB    → RethinkDB"     with linespoint lt 1 ps 1 lw 4 lc 1 pt 6, \
-     ''                          using 1:5 title "PostgreSQL → TokuMX"        with linespoint lt 1 ps 1 lw 4 lc 7 pt 1, \
-     ''                          using 1:3 title "MySQL → Neo4j"              with linespoint lt 1 ps 1 lw 4 lc 3 pt 5
+plot 'throughput-vs-workers.dat' using 1:2 title "* Ephemeral → Observer"      with linespoint lt 1 ps 1 lw 4 lc 4 pt 2, \
+     ''                          using 1:4 title "Cassandra → Elasticsearch *" with linespoint lt 1 ps 1 lw 4 lc 2 pt 4, \
+     ''                          using 1:6 title "MongoDB  → RethinkDB *"     with linespoint lt 1 ps 1 lw 4 lc 1 pt 6, \
+     ''                          using 1:5 title "* PostgreSQL → TokuMX"        with linespoint lt 1 ps 1 lw 4 lc 7 pt 1, \
+     ''                          using 1:3 title "MySQL → Neo4j *"              with linespoint lt 1 ps 1 lw 4 lc 3 pt 5

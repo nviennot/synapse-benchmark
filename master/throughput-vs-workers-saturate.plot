@@ -10,14 +10,14 @@ set yrange [5:1000]
 
 set xlabel "Number of workers" font "Times-Roman,14"
 #set xlabel offset 0,+1
-set xrange [1:100]
+set xrange [1:400]
 set xtics font "Times-Roman,14"
 set ytics font "Times-Roman,14"
 
 set logscale xy
 
 set ytics (2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 30000, 50000)
-set xtics (1,2,5,10,20,50,100, 200, 350)
+set xtics (1,2,5,10,20,50,100, 200,400)
 set grid ytics
 set grid xtics
 # set ytics 250 font "Times-Roman,14"
