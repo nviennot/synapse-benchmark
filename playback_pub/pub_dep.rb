@@ -27,7 +27,7 @@ def create_post(user_id)
     post.id = "#{user_id}0#{current_user.node.incr("pub:#{user_id}:latest_post_id")}"
   end
 
-  $overhead_stat.measure { user.save }
+  $overhead_stat.measure { current_user.save }
   $msg_count_bench.inc
 
   unless post.is_a?(Promiscuous::Publisher::Model::Ephemeral)
