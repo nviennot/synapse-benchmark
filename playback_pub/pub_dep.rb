@@ -2,6 +2,14 @@
 load 'common.rb'
 bootstrap(:pub)
 
+class User
+  include Promiscuous::Publisher
+
+  def node
+    Promiscuous::Dependency.new(id, "latest_post_id").redis_node
+  end
+end
+
 $num_read_deps = ENV['NUM_READ_DEPS'].to_i
 $num_users = ENV['NUM_USERS'].to_i
 $num_users = 2**30 if $num_users == 0
