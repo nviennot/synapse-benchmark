@@ -7,7 +7,7 @@ def get_server_ip(type, db)
   dba = %w(10.179.150.240 10.186.24.18 10.237.155.60)
   dbc = %w(10.69.5.140 10.234.179.198 10.37.156.125)
 
-  unless %w(es cassandra rethinkdb).include?(db.to_s)
+  unless %w(es cassandra).include?(db.to_s)
     dba = [dba.first]
     dbc = [dbc.first]
   end
@@ -313,7 +313,7 @@ begin
     :dbs => %w(mongodb->rethinkdb),
     :num_users => 1000,
     # :sub_latency => 0,
-    :num_workers => [20, 50, 100, 200, 400],
+    :num_workers => [1, 2, 5, 10, 20, 50, 100],
     :num_redis => 80,
     # :num_read_deps => :native,
     :hash_size => 0,
