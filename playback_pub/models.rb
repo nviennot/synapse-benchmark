@@ -33,7 +33,7 @@ module Model::Base
     define_associations     if defined?(define_associations)
     define_attributes(type) if defined?(define_attributes)
 
-    unless ENV['NUM_READ_DEPS'] == 'native'
+    unless ENV['NATIVE']
       case type
       when :pub then define_publishers
       when :sub then define_subscribers

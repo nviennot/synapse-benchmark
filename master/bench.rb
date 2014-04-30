@@ -81,6 +81,7 @@ def run_publisher(options={})
     #{"export NUM_REDIS=#{options[:num_pub_redis]}" if options[:num_pub_redis]}
     #{"export PUB_LATENCY=#{options[:pub_latency]}" if options[:pub_latency]}
     #{"export NUM_READ_DEPS=#{options[:num_read_deps]}" if options[:num_read_deps]}
+    #{"export NATIVE=1" if options[:native]}
     #{ruby_exec(options[:num_read_deps] ? "./pub_dep.rb" : "./pub.rb", gemfile)}
   SCRIPT
 end
@@ -121,7 +122,7 @@ def run_benchmark(options={})
 
   jobs = @abricot.multi :async => true do
     run_publisher(options)
-    run_subscriber(options)
+    run_subscriber(options) unless options[:native]
   end
 
   start = Time.now
@@ -227,7 +228,7 @@ def measure_stats(jobs, options={})
     pub_rate.sample
     sub_rate.sample
 
-    rate = options[:num_read_deps] == :native ? pub_rate : sub_rate
+    rate = options[:native] ? pub_rate : sub_rate
     if rate.samples.size >= 5 && rate.samples[-5..-1].all? { |r| r.zero? }
       raise Deadlock
     end
@@ -311,12 +312,11 @@ begin
   options = {
     # :dbs => %w(mysql->neo4j cassandra->es postgres->tokumx mongodb->rethinkdb nodb->nodb),
     :dbs => 'nodb->nodb',
-    :num_users => 3,
+    :num_users => [10, 1],
     :sub_latency => 0.1,
-    :num_workers => 10,
-    #:num_workers => [1, 2, 5, 10, 20, 50, 100, 200, 400].reverse,
-    :num_redis => 1,
-    # :num_read_deps => :native,
+    :num_workers => [1, 2, 5, 10, 20, 50, 100, 200, 400].reverse,
+    :num_redis => 50,
+    # :native => 1,
     :num_read_deps => 0, # needed for unbalanced users
     :hash_size => 0,
     # :num_workers => 100,
