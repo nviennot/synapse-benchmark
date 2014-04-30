@@ -11,7 +11,7 @@ def update_hosts
 end
 
 def update_app
-  run <<-SCRIPT, "Updating application", :num_workers => 100
+  run <<-SCRIPT, "Updating application"
     cd /srv/promiscuous-benchmark &&
     git fetch &&
     git reset --hard FETCH_HEAD &&

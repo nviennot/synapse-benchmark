@@ -49,7 +49,7 @@ def create_post(user_id)
 
   post = Post.new(:author_id => user_id, :content => 'hello world')
   if post.is_a?(Promiscuous::Publisher::Model::Ephemeral)
-    post.id = "#{user_id}-#{current_user.node.incr("pub:#{user_id}:latest_post_id")}"
+    post.id = "#{user_id}0#{current_user.node.incr("pub:#{user_id}:latest_post_id")}"
   end
 
   $overhead_stat.measure { post.save }
