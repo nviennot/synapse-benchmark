@@ -311,7 +311,7 @@ begin
   options = {
     # :dbs => %w(mysql->neo4j cassandra->es postgres->tokumx mongodb->rethinkdb nodb->nodb),
     :dbs => 'nodb->nodb',
-    :num_users => 1,
+    :num_users => 3,
     :sub_latency => 0.1,
     :num_workers => 10,
     #:num_workers => [1, 2, 5, 10, 20, 50, 100, 200, 400].reverse,
