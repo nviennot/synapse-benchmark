@@ -35,7 +35,7 @@ def parse_file(file)
       end
       slice
     rescue Exception => e
-      STDERR.puts "WARN: parse error"
+      STDERR.puts "WARN: parse error #{e}"
     end
   end.compact
 end
@@ -51,13 +51,16 @@ output = slices.map do |slice|
   end
 end.compact.reduce({}) do |results, (slice, controller, read_deps)|
   if controller =~ /^[^ ]+\/+[^ ]+$/
-    results[controller] ||= {:read_deps => 0,
-                             :read_deps_with_tracking => 0,
-                             :num_publish => 0,
-                             :num_controller_calls => 0,
-                             :read_only_deps => 0,
-                             :publish_duration => 0.0,
-                             :controller_duration => 0.0}
+    results[controller] ||= { :read_deps               => 0,
+                              :read_deps_with_tracking => 0,
+                              :num_publish             => 0,
+                              :num_controller_calls    => 0,
+                              :read_only_deps          => 0,
+                              :publish_duration        => 0.0,
+                              :publish_durations       => [],
+                              :controller_duration     => 0.0,
+                              :controller_durations    => [],
+                              :controller_calls        => [] }
 
     r = results[controller]
 
@@ -66,12 +69,27 @@ end.compact.reduce({}) do |results, (slice, controller, read_deps)|
       r[:read_deps_with_tracking] += read_deps.reject(&:empty?).uniq.size
       r[:num_publish] += 1
       r[:publish_duration] += slice.duration
+      r[:publish_durations].push slice.duration
+
+      # per call statistics:
+      # assign the publish to the most recent call of this controller
+      r[:controller_calls][-1][:deps] += read_deps.flatten.uniq.size
+      r[:controller_calls][-1][:publish_duration] += slice.duration
+      r[:controller_calls][-1][:num_publish] += 1
     end
 
     if slice.type == :app_controller
       r[:num_controller_calls] += 1
       r[:read_only_deps] += read_deps.flatten.uniq.size
       r[:controller_duration] += slice.duration
+      r[:controller_durations].push slice.duration
+
+      # per call statistics:
+      # it is a new call so push it in the controller array
+      r[:controller_calls].push({ :deps                => 0,
+                                  :publish_duration    => 0,
+                                  :num_publish         => 0,
+                                  :controller_duration => slice.duration })
     end
   end
 
@@ -85,8 +103,61 @@ output_normalized = Hash[output.map do |controller, r|
   r[:read_only_deps]          = (r[:read_only_deps]          / r[:num_controller_calls].to_f).round(2)
   r[:publish_duration]        = (r[:publish_duration]        / r[:num_controller_calls].to_f).round(2)
   r[:controller_duration]     = (r[:controller_duration]     / r[:num_controller_calls].to_f).round(2)
+
+  # median and 99percentile metrics
+  calls = r[:controller_calls]
+  sorted_calls = calls.map { |call| call[:deps] }.sort
+  r[:read_deps_median] = sorted_calls[(sorted_calls.count / 2).round]
+  r[:read_deps_95]     = sorted_calls[(sorted_calls.count * 0.99).round]
+  r[:read_deps_99]     = sorted_calls[(sorted_calls.count * 0.99).round]
+  sorted_calls = calls.map { |call| call[:publish_duration] }.sort
+  r[:publish_duration_median] = sorted_calls[(sorted_calls.count / 2).round]
+  r[:publish_duration_95]     = sorted_calls[(sorted_calls.count * 0.99).round]
+  r[:publish_duration_99]     = sorted_calls[(sorted_calls.count * 0.99).round]
+  sorted_calls = calls.map do |call|
+    call[:controller_duration] == 0 ? 0 : (call[:publish_duration] /
+                                           call[:controller_duration].to_f).round(2)
+  end.sort
+  r[:overhead_median] = sorted_calls[(sorted_calls.count / 2).round]
+  r[:overhead_95]     = sorted_calls[(sorted_calls.count * 0.95).round]
+  r[:overhead_99]     = sorted_calls[(sorted_calls.count * 0.99).round]
+  sorted_calls = calls.map { |call| call[:num_publish] }.sort
+  r[:num_publish_median] = sorted_calls[(sorted_calls.count / 2).round]
+  r[:num_publish_95]     = sorted_calls[(sorted_calls.count * 0.99).round]
+  r[:num_publish_99]     = sorted_calls[(sorted_calls.count * 0.99).round]
+
+  r.delete :controller_calls
+
+  # publish percentiles
+  if r[:num_publish] > 0
+    index_median           = (r[:num_publish] / 2).round
+    index_95               = (r[:num_publish] * 0.95).floor
+    index_99               = (r[:num_publish] * 0.99).floor
+    r[:publishs_median]    = (r[:publish_durations][index_median]).round(2)
+    r[:publishs_95percent] = (r[:publish_durations][index_95]).round(2)
+    r[:publishs_99percent] = (r[:publish_durations][index_99]).round(2)
+  end
+  r.delete :publish_durations
+
+  # controller percentiles
+  r[:controller_durations].sort!
+  index_median            = (r[:num_controller_calls] / 2).round
+  index_95                = (r[:num_controller_calls] * 0.95).floor
+  index_99                = (r[:num_controller_calls] * 0.99).floor
+  r[:durations_median]    = (r[:controller_durations][index_median]).round(2)
+  r[:durations_95percent] = (r[:controller_durations][index_95]).round(2)
+  r[:durations_99percent] = (r[:controller_durations][index_99]).round(2)
+  r.delete :controller_durations
   [controller, r]
 end.sort_by { |c,r| -r[:num_controller_calls] }
 ]
+
+overheads = output_normalized.values.map do |controller_data|
+  controller_data[:publish_duration].to_f / controller_data[:controller_duration]
+end.sort
+output_normalized[:avg_overhead]    = (overheads.reduce(&:+) / overheads.count.to_f).round(2)
+output_normalized[:median_overhead] = overheads[(overheads.count / 2).round].round(2)
+output_normalized[:overhead_95]     = overheads[(overheads.count * 0.95).floor].round(2)
+output_normalized[:overhead_99]     = overheads[(overheads.count * 0.99).floor].round(2)
 
 puts MultiJson.dump(output_normalized, :pretty => true)
