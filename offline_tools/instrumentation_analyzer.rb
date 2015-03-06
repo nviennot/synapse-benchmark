@@ -108,11 +108,11 @@ output_normalized = Hash[output.map do |controller, r|
   calls = r[:controller_calls]
   sorted_calls = calls.map { |call| call[:deps] }.sort
   r[:read_deps_median] = sorted_calls[(sorted_calls.count / 2).round]
-  r[:read_deps_95]     = sorted_calls[(sorted_calls.count * 0.99).round]
+  r[:read_deps_95]     = sorted_calls[(sorted_calls.count * 0.95).round]
   r[:read_deps_99]     = sorted_calls[(sorted_calls.count * 0.99).round]
   sorted_calls = calls.map { |call| call[:publish_duration] }.sort
   r[:publish_duration_median] = sorted_calls[(sorted_calls.count / 2).round]
-  r[:publish_duration_95]     = sorted_calls[(sorted_calls.count * 0.99).round]
+  r[:publish_duration_95]     = sorted_calls[(sorted_calls.count * 0.95).round]
   r[:publish_duration_99]     = sorted_calls[(sorted_calls.count * 0.99).round]
   sorted_calls = calls.map do |call|
     call[:controller_duration] == 0 ? 0 : (call[:publish_duration] /
@@ -123,7 +123,7 @@ output_normalized = Hash[output.map do |controller, r|
   r[:overhead_99]     = sorted_calls[(sorted_calls.count * 0.99).round]
   sorted_calls = calls.map { |call| call[:num_publish] }.sort
   r[:num_publish_median] = sorted_calls[(sorted_calls.count / 2).round]
-  r[:num_publish_95]     = sorted_calls[(sorted_calls.count * 0.99).round]
+  r[:num_publish_95]     = sorted_calls[(sorted_calls.count * 0.95).round]
   r[:num_publish_99]     = sorted_calls[(sorted_calls.count * 0.99).round]
 
   r.delete :controller_calls
