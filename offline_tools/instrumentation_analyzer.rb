@@ -32,6 +32,7 @@ def parse_file(file)
       end
       if slice.type == :publish
         slice.payload = MultiJson.load(slice.desc)
+        slice.payload_size = slice.desc.size
       end
       slice
     rescue Exception => e
@@ -45,7 +46,7 @@ slices.sort_by!(&:start)
 
 output = slices.map do |slice|
   if slice.type == :publish && slice.payload
-    [slice, slice.payload['context'], slice.payload['real_deps']['read']] rescue nil
+    [slice, slice.payload['context'], slice.payload['real_deps']['read'], slice.payload_size] rescue nil
   elsif slice.type == :app_controller && slice.read_deps
     [slice, slice.desc, slice.read_deps]
   end
@@ -59,6 +60,7 @@ end.compact.reduce({}) do |results, (slice, controller, read_deps)|
                               :publish_duration        => 0.0,
                               :publish_durations       => [],
                               :publish_deps            => [],
+                              :publish_sizes           => [],
                               :controller_duration     => 0.0,
                               :controller_durations    => [],
                               :controller_calls        => [] }
@@ -72,6 +74,7 @@ end.compact.reduce({}) do |results, (slice, controller, read_deps)|
       r[:publish_duration] += slice.duration
       r[:publish_durations].push slice.duration
       r[:publish_deps].push read_deps.flatten.uniq.size
+      r[:publish_sizes].push slice.payload_size
 
       # per call statistics:
       # assign the publish to the most recent call of this controller
@@ -134,7 +137,7 @@ output_normalized = Hash[output.map do |controller, r|
 
   r.delete :controller_calls
 
-  # publish percentiles
+  # deps percentiles
   if r[:publish_deps].count > 0
     r[:publish_deps].sort!
     index_median       = (r[:publish_deps].count / 2).floor
@@ -148,6 +151,17 @@ output_normalized = Hash[output.map do |controller, r|
   r.delete :publish_deps
 
   # deps percentiles
+  if r[:publish_sizes].count > 0
+    r[:publish_sizes].sort!
+    index_median       = (r[:publish_sizes].count / 2).floor
+    index_99           = (r[:publish_sizes].count * 0.99).floor
+    r[:sizes_median]    = (r[:publish_sizes][index_median]).round(2)
+    r[:sizes_99percent] = (r[:publish_sizes][index_99]).round(2)
+    r[:sizes_avg]       = (r[:publish_sizes].reduce(&:+) / r[:publish_sizes].count.to_f).round(2)
+  end
+  r.delete :publish_sizes
+
+  # publish percentiles
   if r[:num_publish] > 0
     r[:publish_durations].sort!
     index_median           = (r[:num_publish] / 2).floor
